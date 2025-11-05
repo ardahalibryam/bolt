@@ -32,8 +32,8 @@ export default function WelcomeScreen() {
   }, [fontsLoaded]);
 
   const handleContinue = () => {
-    // Navigate to onboarding screens
-    router.push('/onboarding' as any);
+    // Navigate to first onboarding screen
+    router.push('/onboarding/1' as any);
   };
 
   if (!fontsLoaded) {
