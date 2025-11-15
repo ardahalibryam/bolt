@@ -7,7 +7,7 @@ export default function HistoryScreen() {
     <SafeAreaView style={styles.container}>
       <TouchableOpacity
         style={styles.homeButton}
-        onPress={() => router.replace("/(tabs)")}
+        onPress={() => router.push("/(tabs)")}
       >
         <Image
           source={require("../assets/images/icons/nav/home.png")}
