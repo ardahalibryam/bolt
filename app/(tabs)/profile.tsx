@@ -1,6 +1,5 @@
 import { useFonts } from "expo-font";
-import { Image, StyleSheet, Text, View, ScrollView } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 
 export default function ProfileScreen() {
   const [fontsLoaded] = useFonts({
