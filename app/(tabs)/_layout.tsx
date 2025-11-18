@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     height: 24,
   },
   snapIcon: {
-    width: 28,
-    height: 28,
+    width: 50,
+    height: 50,
   },
 });

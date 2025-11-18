@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     left: 0,
-    width: "100%",
+    right: 0,
     alignSelf: "flex-start",
   },
   historyButton: {

@@ -1,48 +1,307 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useState, useRef } from "react";
+import { Image, View, Text, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
 import { router } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
+import { Ionicons } from "@expo/vector-icons";
+
+const { width, height } = Dimensions.get("window");
+const FRAME_SIZE = width * 0.7; // 70% of screen width
+const FRAME_OFFSET = (width - FRAME_SIZE) / 2;
 
 export default function CameraScreen() {
+  const [permission, requestPermission] = useCameraPermissions();
+  const [showTips, setShowTips] = useState(false);
+  const cameraRef = useRef<CameraView>(null);
+
+  if (!permission) {
+    return <View style={styles.container} />;
+  }
+
+  if (!permission.granted) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.permissionContainer}>
+          <Text style={styles.permissionText}>We need your permission to use the camera</Text>
+          <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
+            <Text style={styles.permissionButtonText}>Grant Permission</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const takePicture = async () => {
+    if (cameraRef.current) {
+      try {
+        const photo = await cameraRef.current.takePictureAsync();
+        // Navigate to price screen with the photo
+        router.push("/price");
+      } catch (error) {
+        console.error("Error taking picture:", error);
+      }
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Camera</Text>
-      <Text style={styles.text}>Заснеми предмет</Text>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => router.push("/price")}
+    <SafeAreaView style={styles.container}>
+      <CameraView
+        ref={cameraRef}
+        style={styles.camera}
+        facing="back"
       >
-        <Text style={styles.buttonText}>Продължи</Text>
-      </TouchableOpacity>
-    </View>
+        {/* Back Button */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Image
+            source={require("../assets/images/icons/nav/arrow-back.svg")}
+            style={styles.backIcon}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+
+        {/* Top Section - Camera Icon and Lens Frame */}
+        <View style={styles.topSection}>
+          <View style={styles.topLeft}>
+            <Ionicons name="camera" size={32} color="#fff" />
+          </View>
+          <View style={styles.topCenter}>
+            <Image
+              source={require("../assets/images/lens.png")}
+              style={styles.lensFrame}
+              resizeMode="contain"
+            />
+          </View>
+        </View>
+
+        {/* Corner Framing Guides */}
+        <View style={styles.frameContainer}>
+          {/* Top Left Corner */}
+          <View style={[styles.corner, styles.topLeftCorner]} />
+          {/* Top Right Corner */}
+          <View style={[styles.corner, styles.topRightCorner]} />
+          {/* Bottom Left Corner */}
+          <View style={[styles.corner, styles.bottomLeftCorner]} />
+          {/* Bottom Right Corner */}
+          <View style={[styles.corner, styles.bottomRightCorner]} />
+        </View>
+
+        {/* Tips Overlay */}
+        {showTips && (
+          <View style={styles.tipsOverlay}>
+            <View style={styles.tipsContainer}>
+              <Text style={styles.tipsTitle}>Tips for better photos:</Text>
+              <Text style={styles.tipsText}>• Use good lighting</Text>
+              <Text style={styles.tipsText}>• Keep the product centered</Text>
+              <Text style={styles.tipsText}>• Ensure the product is in focus</Text>
+              <Text style={styles.tipsText}>• Use a clean background</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Bottom Control Bar */}
+        <View style={styles.bottomBar}>
+          <View style={styles.bottomBarContent}>
+            {/* Snap Button */}
+            <TouchableOpacity style={styles.snapButton} onPress={takePicture}>
+              <Image
+                source={require("../assets/images/snap.png")}
+                style={styles.snapIcon}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+
+            {/* Tips Toggle Button */}
+            <TouchableOpacity
+              style={styles.tipsButton}
+              onPress={() => setShowTips(!showTips)}
+            >
+              <Text style={styles.tipsButtonText}>?</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </CameraView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#000",
+  },
+  camera: {
+    flex: 1,
+  },
+  permissionContainer: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#000",
     padding: 20,
   },
-  title: {
-    color: "#fff",
-    fontSize: 24,
-    marginBottom: 20,
-  },
-  text: {
+  permissionText: {
     color: "#fff",
     fontSize: 18,
-    marginBottom: 40,
+    textAlign: "center",
+    marginBottom: 20,
   },
-  button: {
-    backgroundColor: "#007AFF",
+  permissionButton: {
+    backgroundColor: "#1374F6",
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 8,
   },
-  buttonText: {
+  permissionButtonText: {
     color: "#fff",
     fontSize: 16,
   },
+  backButton: {
+    position: "absolute",
+    top: 20,
+    left: 20,
+    zIndex: 1000,
+    padding: 8,
+  },
+  backIcon: {
+    width: 24,
+    height: 24,
+    tintColor: "#fff",
+  },
+  topSection: {
+    position: "absolute",
+    top: 60,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    zIndex: 100,
+  },
+  topLeft: {
+    flex: 1,
+  },
+  topCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  lensFrame: {
+    width: 60,
+    height: 60,
+  },
+  frameContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  corner: {
+    position: "absolute",
+    width: 40,
+    height: 40,
+    borderColor: "#000",
+    borderWidth: 4,
+  },
+  topLeftCorner: {
+    top: FRAME_OFFSET,
+    left: FRAME_OFFSET,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+  },
+  topRightCorner: {
+    top: FRAME_OFFSET,
+    right: FRAME_OFFSET,
+    borderLeftWidth: 0,
+    borderBottomWidth: 0,
+  },
+  bottomLeftCorner: {
+    bottom: FRAME_OFFSET + 120, // Account for bottom bar
+    left: FRAME_OFFSET,
+    borderRightWidth: 0,
+    borderTopWidth: 0,
+  },
+  bottomRightCorner: {
+    bottom: FRAME_OFFSET + 120, // Account for bottom bar
+    right: FRAME_OFFSET,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+  },
+  tipsOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 200,
+  },
+  tipsContainer: {
+    backgroundColor: "#121212",
+    borderRadius: 20,
+    padding: 24,
+    marginHorizontal: 40,
+    borderWidth: 1,
+    borderColor: "#4D4D4D",
+  },
+  tipsTitle: {
+    color: "#f2f2f2",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 16,
+  },
+  tipsText: {
+    color: "#f2f2f2",
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  bottomBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#000",
+    height: 120,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 100,
+  },
+  bottomBarContent: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    paddingHorizontal: 40,
+  },
+  snapButton: {
+    width: 80,
+    height: 80,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  snapIcon: {
+    width: 80,
+    height: 80,
+  },
+  tipsButton: {
+    position: "absolute",
+    right: 40,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#4D4D4D",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  tipsButtonText: {
+    color: "#fff",
+    fontSize: 24,
+    fontWeight: "bold",
+  },
 });
-
