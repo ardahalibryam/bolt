@@ -1,5 +1,7 @@
 import { useFonts } from "expo-font";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { removeToken } from "../lib/auth";
 
 export default function ProfileScreen() {
   const [fontsLoaded] = useFonts({
@@ -9,6 +11,11 @@ export default function ProfileScreen() {
   if (!fontsLoaded) {
     return null;
   }
+
+  const handleLogout = async () => {
+    await removeToken();
+    router.replace("/(auth)/sign-in");
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -28,28 +35,28 @@ export default function ProfileScreen() {
             <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" />
           </View>
           <View style={styles.profileItem}>
-          <View style={styles.profileItemContent}>
+            <View style={styles.profileItemContent}>
               <Image source={require("../../assets/images/icons/profile/star.svg")} style={styles.profileItemImage} resizeMode="contain" />
               <Text style={styles.profileItemText}>Лични данни</Text>
             </View>
             <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" />
           </View>
           <View style={styles.profileItem}>
-          <View style={styles.profileItemContent}>
+            <View style={styles.profileItemContent}>
               <Image source={require("../../assets/images/icons/profile/shield.svg")} style={styles.profileItemImage} resizeMode="contain" />
               <Text style={styles.profileItemText}>Лични данни</Text>
             </View>
             <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" />
           </View>
           <View style={styles.profileItem}><View style={styles.profileItemContent}>
-              <Image source={require("../../assets/images/icons/profile/profile.svg")} style={styles.profileItemImage} resizeMode="contain" />
-              <Text style={styles.profileItemText}>Лични данни</Text>
-            </View>
+            <Image source={require("../../assets/images/icons/profile/profile.svg")} style={styles.profileItemImage} resizeMode="contain" />
+            <Text style={styles.profileItemText}>Лични данни</Text>
+          </View>
             <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" /></View>
           <View style={[styles.profileItem, styles.profileItemLast]}><View style={styles.profileItemContent}>
-              <Image source={require("../../assets/images/icons/profile/email.svg")} style={styles.profileItemImage} resizeMode="contain" />
-              <Text style={styles.profileItemText}>Лични данни</Text>
-            </View>
+            <Image source={require("../../assets/images/icons/profile/email.svg")} style={styles.profileItemImage} resizeMode="contain" />
+            <Text style={styles.profileItemText}>Лични данни</Text>
+          </View>
             <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" /></View>
         </View>
         <View style={styles.profileContainer}>
@@ -60,13 +67,13 @@ export default function ProfileScreen() {
             </View>
             <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" />
           </View>
-          <View style={[styles.profileItem, styles.profileItemLast]}>
+          <TouchableOpacity style={[styles.profileItem, styles.profileItemLast]} onPress={handleLogout}>
             <View style={styles.profileItemContent}>
               <Image source={require("../../assets/images/icons/profile/logout.svg")} style={styles.profileItemImage} resizeMode="contain" />
               <Text style={styles.profileItemText}>Изход</Text>
             </View>
             <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" />
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>

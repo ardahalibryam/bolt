@@ -1,9 +1,11 @@
-import { useState, useRef } from "react";
-import { Image, View, Text, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
-import { router } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { router } from "expo-router";
+import { useRef, useState } from "react";
+import { ActivityIndicator, Alert, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { uploadImage } from "./lib/cloudinary";
+import { createDraft } from "./lib/drafts";
 
 const { width, height } = Dimensions.get("window");
 const FRAME_SIZE = width * 0.7; // 70% of screen width
@@ -12,6 +14,7 @@ const FRAME_OFFSET = (width - FRAME_SIZE) / 2;
 export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [showTips, setShowTips] = useState(false);
+  const [isCreatingDraft, setIsCreatingDraft] = useState(false);
   const cameraRef = useRef<CameraView>(null);
 
   if (!permission) {
@@ -32,13 +35,35 @@ export default function CameraScreen() {
   }
 
   const takePicture = async () => {
-    if (cameraRef.current) {
+    if (cameraRef.current && !isCreatingDraft) {
       try {
-        const photo = await cameraRef.current.takePictureAsync();
-        // Navigate to price screen with the photo
-        router.push("/price");
+        setIsCreatingDraft(true);
+        const photo = await cameraRef.current.takePictureAsync({
+          base64: false, // Explicitly disable base64 to save memory
+        });
+
+        if (!photo?.uri) {
+          throw new Error("Неуспешно заснемане на снимка.");
+        }
+
+        console.log("Uploading image to Cloudinary...");
+        // Upload to Cloudinary
+        const imageUrl = await uploadImage(photo.uri);
+        console.log("Image uploaded successfully:", imageUrl);
+
+        // Create draft with the Cloudinary URL
+        console.log("Creating draft with URL...");
+        const draftId = await createDraft(imageUrl);
+        console.log("Draft created successfully, ID:", draftId);
+
+        // Navigate to price screen with draftId
+        router.push({ pathname: "/price", params: { draftId } });
       } catch (error) {
-        console.error("Error taking picture:", error);
+        console.error("Error in takePicture flow:", error);
+        const message = error instanceof Error ? error.message : "Възникна грешка. Моля, опитайте отново.";
+        Alert.alert("Грешка", message);
+      } finally {
+        setIsCreatingDraft(false);
       }
     }
   };
@@ -105,12 +130,20 @@ export default function CameraScreen() {
         <View style={styles.bottomBar}>
           <View style={styles.bottomBarContent}>
             {/* Snap Button */}
-            <TouchableOpacity style={styles.snapButton} onPress={takePicture}>
-              <Image
-                source={require("../assets/images/snap.png")}
-                style={styles.snapIcon}
-                resizeMode="contain"
-              />
+            <TouchableOpacity
+              style={[styles.snapButton, isCreatingDraft && styles.snapButtonDisabled]}
+              onPress={takePicture}
+              disabled={isCreatingDraft}
+            >
+              {isCreatingDraft ? (
+                <ActivityIndicator size="large" color="#fff" />
+              ) : (
+                <Image
+                  source={require("../assets/images/snap.png")}
+                  style={styles.snapIcon}
+                  resizeMode="contain"
+                />
+              )}
             </TouchableOpacity>
 
             {/* Tips Toggle Button */}
@@ -288,6 +321,9 @@ const styles = StyleSheet.create({
   snapIcon: {
     width: 80,
     height: 80,
+  },
+  snapButtonDisabled: {
+    opacity: 0.5,
   },
   tipsButton: {
     position: "absolute",

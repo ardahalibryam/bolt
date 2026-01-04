@@ -2,6 +2,7 @@ import { useFonts } from "expo-font";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
@@ -11,11 +12,14 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { login, storeToken } from "../lib/auth";
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [fontsLoaded] = useFonts({
     "Montserrat-Regular": require("@expo-google-fonts/montserrat/Montserrat_400Regular.ttf"),
@@ -28,9 +32,22 @@ export default function SignInScreen() {
     return null;
   }
 
-  const handleSignIn = () => {
-    // TODO: Implement sign in logic
-    router.push("/(tabs)/" as any);
+  const handleSignIn = async () => {
+    if (isLoading) return;
+
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const token = await login(email.trim(), password);
+      await storeToken(token);
+      router.replace("/(tabs)/" as any);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Възникна неочаквана грешка.";
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -80,9 +97,24 @@ export default function SignInScreen() {
           </View>
         </View>
 
+        {/* Error Message */}
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
         {/* Primary Button */}
-        <TouchableOpacity style={styles.primaryButton} onPress={handleSignIn}>
-          <Text style={styles.primaryButtonText}>Влез</Text>
+        <TouchableOpacity
+          style={[styles.primaryButton, isLoading && styles.primaryButtonDisabled]}
+          onPress={handleSignIn}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#F2F2F2" />
+          ) : (
+            <Text style={styles.primaryButtonText}>Влез</Text>
+          )}
         </TouchableOpacity>
 
         {/* Forgot Password Link */}
@@ -191,12 +223,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#1374F6",
   },
+  errorContainer: {
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.3)",
+  },
+  errorText: {
+    fontFamily: "Inter-Medium",
+    fontSize: 14,
+    color: "#EF4444",
+    textAlign: "center",
+  },
   primaryButton: {
     backgroundColor: "#1374F6",
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: "center",
     marginBottom: 16,
+  },
+  primaryButtonDisabled: {
+    opacity: 0.6,
   },
   primaryButtonText: {
     fontFamily: "Inter-SemiBold",

@@ -2,15 +2,17 @@ import { useFonts } from "expo-font";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { register, storeToken } from "../lib/auth";
 
 export default function SignUpScreen() {
   const [name, setName] = useState("");
@@ -18,6 +20,8 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [newsletterChecked, setNewsletterChecked] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [fontsLoaded] = useFonts({
     "Montserrat-Regular": require("@expo-google-fonts/montserrat/Montserrat_400Regular.ttf"),
@@ -30,9 +34,37 @@ export default function SignUpScreen() {
     return null;
   }
 
-  const handleSignUp = () => {
-    // TODO: Implement sign up logic
-    router.push("/(tabs)/" as any);
+  const handleSignUp = async () => {
+    if (isLoading) return;
+
+    if (!email || !password || !name) {
+      setError("Моля, попълнете всички задължителни полета.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Паролата трябва да бъде поне 6 символа.");
+      return;
+    }
+
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const token = await register(email.trim(), password);
+      if (token) {
+        await storeToken(token);
+        router.replace("/(tabs)/" as any);
+      } else {
+        // Fallback if no token returned, redirect to login
+        router.replace("/(auth)/sign-in");
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Възникна неочаквана грешка.";
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -98,9 +130,24 @@ export default function SignUpScreen() {
           </Text>
         </TouchableOpacity>
 
+        {/* Error Message */}
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
         {/* Primary Button */}
-        <TouchableOpacity style={styles.primaryButton} onPress={handleSignUp}>
-          <Text style={styles.primaryButtonText}>Регистрирай се</Text>
+        <TouchableOpacity
+          style={[styles.primaryButton, isLoading && styles.primaryButtonDisabled]}
+          onPress={handleSignUp}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#F2F2F2" />
+          ) : (
+            <Text style={styles.primaryButtonText}>Регистрирай се</Text>
+          )}
         </TouchableOpacity>
 
         {/* Forgot Password Link */}
@@ -203,6 +250,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#1374F6",
   },
+  errorContainer: {
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.3)",
+  },
+  errorText: {
+    fontFamily: "Inter-Medium",
+    fontSize: 14,
+    color: "#EF4444",
+    textAlign: "center",
+  },
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -238,6 +299,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: "center",
     marginBottom: 16,
+  },
+  primaryButtonDisabled: {
+    opacity: 0.6,
   },
   primaryButtonText: {
     fontFamily: "Inter-SemiBold",
