@@ -141,7 +141,7 @@ export function apiPatch<T>(
  */
 export function apiDelete<T>(
     endpoint: string,
-    options?: Omit<RequestOptions, "body">
+    options?: RequestOptions
 ): Promise<T> {
     return apiRequest<T>(endpoint, "DELETE", options);
 }

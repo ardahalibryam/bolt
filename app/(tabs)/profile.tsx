@@ -2,6 +2,7 @@ import { useFonts } from "expo-font";
 import { router } from "expo-router";
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { removeToken } from "../lib/auth";
+import { rateApp } from "../lib/rateApp";
 
 export default function ProfileScreen() {
   const [fontsLoaded] = useFonts({
@@ -27,37 +28,41 @@ export default function ProfileScreen() {
         />
         <Text style={styles.title}>Profile</Text>
         <View style={styles.profileContainer}>
-          <View style={styles.profileItem}>
+          <TouchableOpacity style={styles.profileItem} onPress={() => router.push("/personal-data-screen")}>
             <View style={styles.profileItemContent}>
               <Image source={require("../../assets/images/icons/profile/profile.svg")} style={styles.profileItemImage} resizeMode="contain" />
               <Text style={styles.profileItemText}>Лични данни</Text>
             </View>
             <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" />
-          </View>
-          <View style={styles.profileItem}>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.profileItem} onPress={rateApp}>
             <View style={styles.profileItemContent}>
               <Image source={require("../../assets/images/icons/profile/star.svg")} style={styles.profileItemImage} resizeMode="contain" />
-              <Text style={styles.profileItemText}>Лични данни</Text>
+              <Text style={styles.profileItemText}>Оцени ни</Text>
             </View>
             <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" />
-          </View>
+          </TouchableOpacity>
           <View style={styles.profileItem}>
             <View style={styles.profileItemContent}>
               <Image source={require("../../assets/images/icons/profile/shield.svg")} style={styles.profileItemImage} resizeMode="contain" />
-              <Text style={styles.profileItemText}>Лични данни</Text>
+              <Text style={styles.profileItemText}>Поверителност</Text>
             </View>
             <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" />
           </View>
-          <View style={styles.profileItem}><View style={styles.profileItemContent}>
-            <Image source={require("../../assets/images/icons/profile/profile.svg")} style={styles.profileItemImage} resizeMode="contain" />
-            <Text style={styles.profileItemText}>Лични данни</Text>
+          <View style={styles.profileItem}>
+            <View style={styles.profileItemContent}>
+              <Image source={require("../../assets/images/icons/profile/profile.svg")} style={styles.profileItemImage} resizeMode="contain" />
+              <Text style={styles.profileItemText}>Помощ</Text>
+            </View>
+            <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" />
           </View>
-            <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" /></View>
-          <View style={[styles.profileItem, styles.profileItemLast]}><View style={styles.profileItemContent}>
-            <Image source={require("../../assets/images/icons/profile/email.svg")} style={styles.profileItemImage} resizeMode="contain" />
-            <Text style={styles.profileItemText}>Лични данни</Text>
+          <View style={[styles.profileItem, styles.profileItemLast]}>
+            <View style={styles.profileItemContent}>
+              <Image source={require("../../assets/images/icons/profile/email.svg")} style={styles.profileItemImage} resizeMode="contain" />
+              <Text style={styles.profileItemText}>Абонирай се!</Text>
+            </View>
+            <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" />
           </View>
-            <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" /></View>
         </View>
         <View style={styles.profileContainer}>
           <View style={styles.profileItem}>

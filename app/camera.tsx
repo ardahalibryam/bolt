@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
 import { ActivityIndicator, Alert, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -34,37 +35,77 @@ export default function CameraScreen() {
     );
   }
 
+  /**
+   * Shared handler for processing an image URI (from camera or gallery)
+   */
+  const handleImageSelected = async (uri: string) => {
+    try {
+      setIsCreatingDraft(true);
+
+      console.log("Uploading image to Cloudinary...");
+      const imageUrl = await uploadImage(uri);
+      console.log("Image uploaded successfully:", imageUrl);
+
+      console.log("Creating draft with URL...");
+      const draftId = await createDraft(imageUrl);
+      console.log("Draft created successfully, ID:", draftId);
+
+      router.push({ pathname: "/price", params: { draftId } });
+    } catch (error) {
+      console.error("Error in image processing flow:", error);
+      const message = error instanceof Error ? error.message : "Възникна грешка. Моля, опитайте отново.";
+      Alert.alert("Грешка", message);
+    } finally {
+      setIsCreatingDraft(false);
+    }
+  };
+
   const takePicture = async () => {
     if (cameraRef.current && !isCreatingDraft) {
       try {
-        setIsCreatingDraft(true);
         const photo = await cameraRef.current.takePictureAsync({
-          base64: false, // Explicitly disable base64 to save memory
+          base64: false,
         });
 
         if (!photo?.uri) {
           throw new Error("Неуспешно заснемане на снимка.");
         }
 
-        console.log("Uploading image to Cloudinary...");
-        // Upload to Cloudinary
-        const imageUrl = await uploadImage(photo.uri);
-        console.log("Image uploaded successfully:", imageUrl);
-
-        // Create draft with the Cloudinary URL
-        console.log("Creating draft with URL...");
-        const draftId = await createDraft(imageUrl);
-        console.log("Draft created successfully, ID:", draftId);
-
-        // Navigate to price screen with draftId
-        router.push({ pathname: "/price", params: { draftId } });
+        await handleImageSelected(photo.uri);
       } catch (error) {
-        console.error("Error in takePicture flow:", error);
+        console.error("Error in takePicture:", error);
         const message = error instanceof Error ? error.message : "Възникна грешка. Моля, опитайте отново.";
         Alert.alert("Грешка", message);
-      } finally {
-        setIsCreatingDraft(false);
       }
+    }
+  };
+
+  /**
+   * Pick an image from the device gallery
+   */
+  const pickImage = async () => {
+    if (isCreatingDraft) return;
+
+    // Request permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Нужен е достъп",
+        "Моля, разрешете достъп до галерията, за да изберете снимка.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    // Launch image picker
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: false,
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]?.uri) {
+      await handleImageSelected(result.assets[0].uri);
     }
   };
 
@@ -129,6 +170,15 @@ export default function CameraScreen() {
         {/* Bottom Control Bar */}
         <View style={styles.bottomBar}>
           <View style={styles.bottomBarContent}>
+            {/* Gallery Button */}
+            <TouchableOpacity
+              style={styles.galleryButton}
+              onPress={pickImage}
+              disabled={isCreatingDraft}
+            >
+              <Ionicons name="images" size={28} color={isCreatingDraft ? "#666" : "#fff"} />
+            </TouchableOpacity>
+
             {/* Snap Button */}
             <TouchableOpacity
               style={[styles.snapButton, isCreatingDraft && styles.snapButtonDisabled]}
@@ -324,6 +374,16 @@ const styles = StyleSheet.create({
   },
   snapButtonDisabled: {
     opacity: 0.5,
+  },
+  galleryButton: {
+    position: "absolute",
+    left: 40,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#4D4D4D",
+    justifyContent: "center",
+    alignItems: "center",
   },
   tipsButton: {
     position: "absolute",

@@ -1,7 +1,11 @@
 import { useFonts } from "expo-font";
 import { router } from "expo-router";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Dimensions, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { getMyListings, Listing } from "./lib/listings";
+
+const { width } = Dimensions.get("window");
 
 export default function HistoryScreen() {
   const [fontsLoaded] = useFonts({
@@ -9,9 +13,63 @@ export default function HistoryScreen() {
     "Inter-Medium": require("@expo-google-fonts/inter/Inter_500Medium.ttf"),
   });
 
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadHistory();
+  }, []);
+
+  const loadHistory = async () => {
+    try {
+      const data = await getMyListings();
+      setListings(data);
+    } catch (error) {
+      console.error("Failed to load history:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("bg-BG", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      }) + " г.";
+    } catch {
+      return dateString;
+    }
+  };
+
   if (!fontsLoaded) {
     return null;
   }
+
+  const renderItem = ({ item }: { item: Listing }) => (
+    <TouchableOpacity
+      style={styles.historyContainer}
+      onPress={() => router.push(`/listing/${item.id}`)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.historyItem}>
+        <View style={styles.historyItemLeft}>
+          <Text style={styles.historyItemTitle} numberOfLines={1} ellipsizeMode="tail">{item.title}</Text>
+          <Text style={styles.historyItemDate}>{formatDate(item.createdAt)}</Text>
+          <View style={styles.priceBadge}>
+            <Text style={styles.priceText}>{item.price} €</Text>
+          </View>
+        </View>
+        <Image
+          source={{ uri: item.imageUrl }}
+          style={styles.historyItemImage}
+          resizeMode="cover"
+        />
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -25,63 +83,31 @@ export default function HistoryScreen() {
           resizeMode="contain"
         />
       </TouchableOpacity>
-      <View style={styles.content}>
+
+      <View style={styles.header}>
         <Image
           source={require("../assets/images/logo.png")}
           style={styles.pfpImage}
           resizeMode="contain"
         />
         <Text style={styles.title}>History</Text>
-        <View style={styles.historyContainer}>
-          <View style={styles.historyItem}>
-            <View style={styles.historyItemLeft}>
-              <Text style={styles.historyItemTitle}>iPhone 15</Text>
-              <Text style={styles.historyItemDate}>02.10.2025 г.</Text>
-              <View style={styles.priceBadge}>
-                <Text style={styles.priceText}>985 лв.</Text>
-              </View>
-            </View>
-            <Image
-              source={require("../assets/images/iphone.png")}
-              style={styles.historyItemImage}
-              resizeMode="cover"
-            />
-          </View>
-        </View>
-        <View style={styles.historyContainer}>
-          <View style={styles.historyItem}>
-            <View style={styles.historyItemLeft}>
-              <Text style={styles.historyItemTitle}>iPhone 15</Text>
-              <Text style={styles.historyItemDate}>02.10.2025 г.</Text>
-              <View style={styles.priceBadge}>
-                <Text style={styles.priceText}>985 лв.</Text>
-              </View>
-            </View>
-            <Image
-              source={require("../assets/images/iphone.png")}
-              style={styles.historyItemImage}
-              resizeMode="cover"
-            />
-          </View>
-        </View>
-        <View style={styles.historyContainer}>
-          <View style={styles.historyItem}>
-            <View style={styles.historyItemLeft}>
-              <Text style={styles.historyItemTitle}>iPhone 15</Text>
-              <Text style={styles.historyItemDate}>02.10.2025 г.</Text>
-              <View style={styles.priceBadge}>
-                <Text style={styles.priceText}>985 лв.</Text>
-              </View>
-            </View>
-            <Image
-              source={require("../assets/images/iphone.png")}
-              style={styles.historyItemImage}
-              resizeMode="cover"
-            />
-          </View>
-        </View>
-        
       </View>
+
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#fff" />
+        </View>
+      ) : (
+        <FlatList
+          data={listings}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>Все още нямате история.</Text>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -102,70 +128,86 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
   },
-  content: {
-    flex: 1,
+  header: {
     alignItems: "center",
-    padding: 20,
-    marginTop: 75,
+    paddingVertical: 20,
+    marginTop: 40,
+  },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  listContent: {
+    paddingBottom: 40,
+    alignItems: "center",
   },
   pfpImage: {
-    width: 100,
-    height: 100,
-    marginBottom: 25,
-    borderRadius: 50,
+    width: 80,
+    height: 80,
+    marginBottom: 16,
+    borderRadius: 40,
   },
   title: {
     color: "#f2f2f2",
-    fontSize: 32,
-    marginBottom: 20,
+    fontSize: 28,
+    marginBottom: 10,
+    fontFamily: "Montserrat-Bold",
   },
   historyContainer: {
-    width: "90%",
+    width: Math.min(width * 0.9, 500),
     backgroundColor: "#121212",
-    borderColor: "#4D4D4D",
+    borderColor: "#333",
     borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    marginTop: 20,
+    borderRadius: 16,
+    marginBottom: 16,
+    overflow: "hidden",
   },
   historyItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 20,
+    padding: 16,
   },
   historyItemLeft: {
     flex: 1,
-    marginRight: 16,
+    marginRight: 12,
   },
   historyItemTitle: {
     fontFamily: "Montserrat-Bold",
-    fontSize: 20,
-    color: "#f2f2f2",
-    marginBottom: 8,
+    fontSize: 18,
+    color: "#fff",
+    marginBottom: 6,
   },
   historyItemDate: {
     fontFamily: "Inter-Medium",
-    fontSize: 10,
-    color: "#f2f2f2",
+    fontSize: 12,
+    color: "#888",
     marginBottom: 8,
   },
   priceBadge: {
-    backgroundColor: "#f2f2f2",
+    backgroundColor: "#fff",
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     alignSelf: "flex-start",
   },
   priceText: {
     fontFamily: "Inter-Medium",
-    fontSize: 12,
+    fontSize: 14,
+    fontWeight: "bold",
     color: "#000",
   },
   historyItemImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
+    width: 70,
+    height: 70,
+    borderRadius: 12,
+    backgroundColor: "#333",
   },
+  emptyText: {
+    color: "#666",
+    fontSize: 16,
+    textAlign: "center",
+    marginTop: 60,
+  }
 });
-

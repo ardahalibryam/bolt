@@ -1,5 +1,5 @@
 import { API_BASE_URL } from "./api";
-import { apiPost } from "./apiClient";
+import { apiDelete, apiGet, apiPost } from "./apiClient";
 import * as TokenService from "./token";
 
 // Re-export token service for backward compatibility
@@ -77,5 +77,29 @@ export async function register(email: string, password: string): Promise<string>
 
         throw new Error(errorMessage);
     }
+}
+
+/**
+ * Fetches current user profile
+ */
+export async function getMe(): Promise<{ email: string; createdAt: string }> {
+    const response = await apiGet<{ user: { email: string; createdAt: string } }>("/auth/me");
+    return response.user;
+}
+
+/**
+ * Changes user password
+ */
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    await apiPost("/auth/change-password", { currentPassword, newPassword });
+}
+
+/**
+ * Deletes user account
+ */
+export async function deleteAccount(currentPassword: string): Promise<void> {
+    await apiDelete("/auth/me", {
+        body: { password: currentPassword }
+    });
 }
 

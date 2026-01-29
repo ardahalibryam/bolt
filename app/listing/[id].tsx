@@ -1,28 +1,29 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getListing, Listing } from "../lib/drafts"; // Adjusted path for app/listing/[id].tsx
+import { getListing, Listing } from "../lib/listings";
 
-export default function ListingScreen() {
-    const { id } = useLocalSearchParams();
+const { width } = Dimensions.get("window");
+
+export default function ListingDetailsScreen() {
+    const { id, created } = useLocalSearchParams<{ id: string; created?: string }>();
     const [listing, setListing] = useState<Listing | null>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (id) {
-            loadListing(Array.isArray(id) ? id[0] : id);
+            loadListing();
         }
     }, [id]);
 
-    const loadListing = async (listingId: string) => {
+    const loadListing = async () => {
         try {
-            const data = await getListing(listingId);
+            const data = await getListing(id);
             setListing(data);
-        } catch (e) {
-            setError("Грешка при зареждане на обявата.");
-            console.error(e);
+        } catch (error) {
+            Alert.alert("Error", "Failed to load listing details.");
+            router.back();
         } finally {
             setLoading(false);
         }
@@ -36,48 +37,54 @@ export default function ListingScreen() {
         );
     }
 
-    if (!listing || error) {
-        return (
-            <SafeAreaView style={[styles.container, styles.center]}>
-                <Text style={styles.errorText}>{error || "Обявата не е намерена"}</Text>
-                <TouchableOpacity onPress={() => router.replace("/(tabs)")} style={styles.button}>
-                    <Text style={styles.buttonText}>Към началото</Text>
-                </TouchableOpacity>
-            </SafeAreaView>
-        );
-    }
+    if (!listing) return null;
 
     return (
         <SafeAreaView style={styles.container}>
-            <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => router.replace("/(tabs)")}
-            >
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                    <Text style={styles.backText}>← Назад</Text>
+                </TouchableOpacity>
+                <Text style={styles.headerTitle} numberOfLines={1}>Детайли</Text>
+                <View style={{ width: 60 }} />
+            </View>
+
+            <ScrollView contentContainerStyle={styles.content}>
                 <Image
-                    source={require("../../assets/images/icons/nav/arrow-back.svg")} // Adjusted path
-                    style={styles.backIcon}
-                    resizeMode="contain"
+                    source={{ uri: listing.imageUrl }}
+                    style={styles.image}
+                    resizeMode="cover"
                 />
-            </TouchableOpacity>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                <Image source={{ uri: listing.imageUrl }} style={styles.image} resizeMode="cover" />
-
-                <View style={styles.content}>
-                    <Text style={styles.price}>{listing.price} лв.</Text>
+                <View style={styles.detailsContainer}>
                     <Text style={styles.title}>{listing.title}</Text>
+
+                    <View style={styles.priceRow}>
+                        <Text style={styles.price}>{listing.price} {listing.currency || "лв."}</Text>
+                        <Text style={styles.date}>
+                            {new Date(listing.createdAt).toLocaleDateString("bg-BG")}
+                        </Text>
+                    </View>
 
                     <View style={styles.divider} />
 
                     <Text style={styles.sectionTitle}>Описание</Text>
                     <Text style={styles.description}>{listing.description}</Text>
 
-                    <TouchableOpacity
-                        style={styles.button}
-                        onPress={() => router.replace("/(tabs)")}
-                    >
-                        <Text style={styles.buttonText}>Готово</Text>
-                    </TouchableOpacity>
+                    {listing.externalPlatformHint && (
+                        <View style={styles.platformBadge}>
+                            <Text style={styles.platformText}>Платформа: {listing.externalPlatformHint}</Text>
+                        </View>
+                    )}
+
+                    {created === "true" && (
+                        <TouchableOpacity
+                            style={styles.doneButton}
+                            onPress={() => router.replace("/(tabs)")}
+                        >
+                            <Text style={styles.doneButtonText}>Завърши обява</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -93,74 +100,103 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
     },
-    scrollContent: {
-        flexGrow: 1,
+    header: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: 20,
+        paddingVertical: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: "#333",
+    },
+    headerTitle: {
+        color: "#fff",
+        fontSize: 18,
+        fontWeight: "bold",
+        flex: 1,
+        textAlign: "center",
     },
     backButton: {
-        position: "absolute",
-        top: 20,
-        left: 20,
-        zIndex: 1000,
-        padding: 8,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        borderRadius: 20,
+        padding: 5,
+        width: 60,
     },
-    backIcon: {
-        width: 24,
-        height: 24,
-        tintColor: "#fff",
-    },
-    image: {
-        width: "100%",
-        height: 300,
+    backText: {
+        color: "#007AFF",
+        fontSize: 16,
     },
     content: {
-        padding: 20,
+        paddingBottom: 40,
     },
-    price: {
-        color: "#007AFF", // Brand color
-        fontSize: 28,
-        fontWeight: "bold",
-        marginBottom: 8,
+    image: {
+        width: width * 0.6,
+        height: width * 0.6,
+        alignSelf: "center",
+        borderRadius: 12,
+        marginVertical: 16,
+        backgroundColor: "#121212",
+    },
+    detailsContainer: {
+        padding: 20,
     },
     title: {
         color: "#fff",
         fontSize: 24,
-        fontWeight: "600",
-        marginBottom: 16,
+        fontWeight: "bold",
+        marginBottom: 10,
+    },
+    priceRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "baseline",
+        marginBottom: 20,
+    },
+    price: {
+        color: "#fff",
+        fontSize: 28,
+        fontWeight: "bold",
+    },
+    date: {
+        color: "#888",
+        fontSize: 14,
     },
     divider: {
         height: 1,
         backgroundColor: "#333",
-        marginVertical: 16,
+        marginVertical: 20,
     },
     sectionTitle: {
-        color: "#999",
-        fontSize: 14,
-        marginBottom: 8,
-        textTransform: "uppercase",
+        color: "#ccc",
+        fontSize: 16,
+        fontWeight: "bold",
+        marginBottom: 10,
     },
     description: {
-        color: "#E0E0E0",
+        color: "#ddd",
         fontSize: 16,
         lineHeight: 24,
-        marginBottom: 32,
     },
-    button: {
+    platformBadge: {
+        marginTop: 20,
+        backgroundColor: "#1A1A1A",
+        padding: 10,
+        borderRadius: 8,
+        alignSelf: "flex-start",
+    },
+    platformText: {
+        color: "#888",
+        fontSize: 14,
+    },
+    doneButton: {
+        marginTop: 40,
         backgroundColor: "#007AFF",
-        paddingHorizontal: 32,
-        paddingVertical: 16,
+        padding: 16,
         borderRadius: 8,
         alignItems: "center",
+        width: "100%",
     },
-    buttonText: {
+    doneButtonText: {
         color: "#fff",
         fontSize: 16,
         fontWeight: "bold",
-    },
-    errorText: {
-        color: "#FF453A",
-        fontSize: 18,
-        marginBottom: 20,
     },
 });

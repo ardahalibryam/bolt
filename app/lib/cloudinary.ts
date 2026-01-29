@@ -28,9 +28,19 @@ export async function uploadImage(uri: string): Promise<string> {
     formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
 
     if (uri.startsWith("data:image")) {
+        // Web: Base64 data URI
         console.log("Cloudinary Upload: Detected Base64 (Web/Data URI). Sending as string.");
         formData.append("file", uri);
+    } else if (uri.startsWith("blob:")) {
+        // Web: Blob URL from expo-image-picker on web
+        console.log("Cloudinary Upload: Detected Blob URL (Web). Fetching and sending as File.");
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        const filename = `photo_${Date.now()}.jpg`;
+        const file = new File([blob], filename, { type: blob.type || "image/jpeg" });
+        formData.append("file", file);
     } else {
+        // Native (iOS/Android): File URI
         console.log("Cloudinary Upload: Detected File URI (Native). Sending as file object.");
         // @ts-ignore
         formData.append("file", {

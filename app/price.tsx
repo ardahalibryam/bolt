@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ApiError } from "./lib/apiClient";
-import { DraftPricing, finalizeDraft, generateDraftPricing, generateDraftText, getDraftPricing } from "./lib/drafts";
+import { DraftPricing, generateDraftPricing, generateDraftText, getDraftPricing } from "./lib/drafts";
 
 export default function PriceScreen() {
   const { draftId } = useLocalSearchParams();
@@ -66,31 +66,31 @@ export default function PriceScreen() {
 
     setSubmitting(true);
     try {
-      // Step 1: Generate text (saves price)
+      // Generate text (saves price)
       const genResult = await generateDraftText(id, selectedPrice);
 
       if (genResult.status !== "text_generated") {
         throw new Error("Генерирането на текст не е успешно.");
       }
 
-      // Step 2: Finalize (only after successful text generation)
       const { title, description } = genResult.generatedText || {};
 
       if (!title || !description) {
         throw new Error("Липсват заглавие или описание от AI.");
       }
 
-      console.log("Finalizing draft", { draftId: id, finalTitle: title });
-
-      const { listingId } = await finalizeDraft(id, {
-        finalTitle: title,
-        finalDescription: description
+      // Navigate to Review screen for user editing
+      router.push({
+        pathname: "/review",
+        params: {
+          draftId: id,
+          title,
+          description
+        }
       });
-
-      router.push(`/listing/${listingId}`);
     } catch (error) {
       console.error("Submit error:", error);
-      Alert.alert("Грешка", "Неуспешно генериране на обявата. Моля, опитайте отново.");
+      Alert.alert("Грешка", "Неуспешно генериране на текст. Моля, опитайте отново.");
     } finally {
       setSubmitting(false);
     }
@@ -143,7 +143,7 @@ export default function PriceScreen() {
             <Text style={styles.optionLabel}>⚡ Бърза продажба</Text>
             <Text style={styles.optionHelper}>По-бърза продажба</Text>
           </View>
-          <Text style={styles.optionPrice}>{pricing.fast} лв.</Text>
+          <Text style={styles.optionPrice}>{pricing.fast} €</Text>
         </TouchableOpacity>
 
         {/* Option: Recommended */}
@@ -155,7 +155,7 @@ export default function PriceScreen() {
             <Text style={styles.optionLabel}>⭐ Препоръчана цена</Text>
             <Text style={styles.optionHelper}>Най-добър баланс</Text>
           </View>
-          <Text style={styles.optionPrice}>{pricing.recommended} лв.</Text>
+          <Text style={styles.optionPrice}>{pricing.recommended} €</Text>
         </TouchableOpacity>
 
         {/* Option: Max */}
@@ -167,7 +167,7 @@ export default function PriceScreen() {
             <Text style={styles.optionLabel}>💰 Максимална цена</Text>
             <Text style={styles.optionHelper}>Максимална печалба</Text>
           </View>
-          <Text style={styles.optionPrice}>{pricing.max} лв.</Text>
+          <Text style={styles.optionPrice}>{pricing.max} €</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
