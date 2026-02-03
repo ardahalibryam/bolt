@@ -1,12 +1,12 @@
-import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
 import { ActivityIndicator, Alert, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { uploadImage } from "./lib/cloudinary";
-import { createDraft } from "./lib/drafts";
+import { uploadImage } from "../lib/cloudinary";
+import { createDraft } from "../lib/drafts";
+import { Colors } from "./constants/Colors";
 
 const { width, height } = Dimensions.get("window");
 const FRAME_SIZE = width * 0.7; // 70% of screen width
@@ -124,45 +124,31 @@ export default function CameraScreen() {
           <Image
             source={require("../assets/images/icons/nav/arrow-back.svg")}
             style={styles.backIcon}
+            tintColor={Colors.white}
             resizeMode="contain"
           />
         </TouchableOpacity>
-
-        {/* Top Section - Camera Icon and Lens Frame */}
-        <View style={styles.topSection}>
-          <View style={styles.topLeft}>
-            <Ionicons name="camera" size={32} color="#fff" />
-          </View>
-          <View style={styles.topCenter}>
-            <Image
-              source={require("../assets/images/lens.png")}
-              style={styles.lensFrame}
-              resizeMode="contain"
-            />
-          </View>
-        </View>
-
-        {/* Corner Framing Guides */}
-        <View style={styles.frameContainer}>
-          {/* Top Left Corner */}
-          <View style={[styles.corner, styles.topLeftCorner]} />
-          {/* Top Right Corner */}
-          <View style={[styles.corner, styles.topRightCorner]} />
-          {/* Bottom Left Corner */}
-          <View style={[styles.corner, styles.bottomLeftCorner]} />
-          {/* Bottom Right Corner */}
-          <View style={[styles.corner, styles.bottomRightCorner]} />
-        </View>
 
         {/* Tips Overlay */}
         {showTips && (
           <View style={styles.tipsOverlay}>
             <View style={styles.tipsContainer}>
-              <Text style={styles.tipsTitle}>Tips for better photos:</Text>
-              <Text style={styles.tipsText}>• Use good lighting</Text>
-              <Text style={styles.tipsText}>• Keep the product centered</Text>
-              <Text style={styles.tipsText}>• Ensure the product is in focus</Text>
-              <Text style={styles.tipsText}>• Use a clean background</Text>
+              <TouchableOpacity
+                style={styles.tipsCloseButton}
+                onPress={() => setShowTips(false)}
+              >
+                <Image
+                  source={require("../assets/images/icons/camera/close.svg")}
+                  style={styles.tipsCloseIcon}
+                  tintColor={Colors.textPrimary}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+              <Text style={styles.tipsTitle}>Съвети за по-добри снимки:</Text>
+              <Text style={styles.tipsText}>• Използвайте добро осветление</Text>
+              <Text style={styles.tipsText}>• Дръжте продукта в центъра</Text>
+              <Text style={styles.tipsText}>• Уверете се, че продуктът е на фокус</Text>
+              <Text style={styles.tipsText}>• Използвайте чист фон</Text>
             </View>
           </View>
         )}
@@ -176,7 +162,11 @@ export default function CameraScreen() {
               onPress={pickImage}
               disabled={isCreatingDraft}
             >
-              <Ionicons name="images" size={28} color={isCreatingDraft ? "#666" : "#fff"} />
+              <Image
+                source={require("../assets/images/icons/camera/gallery.svg")}
+                style={styles.galleryIcon}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
 
             {/* Snap Button */}
@@ -201,7 +191,11 @@ export default function CameraScreen() {
               style={styles.tipsButton}
               onPress={() => setShowTips(!showTips)}
             >
-              <Text style={styles.tipsButtonText}>?</Text>
+              <Image
+                source={require("../assets/images/icons/camera/help.svg")}
+                style={styles.tipsIcon}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -213,7 +207,7 @@ export default function CameraScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: Colors.black,
   },
   camera: {
     flex: 1,
@@ -225,19 +219,19 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   permissionText: {
-    color: "#fff",
+    color: Colors.white,
     fontSize: 18,
     textAlign: "center",
     marginBottom: 20,
   },
   permissionButton: {
-    backgroundColor: "#1374F6",
+    backgroundColor: Colors.primary,
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 8,
   },
   permissionButtonText: {
-    color: "#fff",
+    color: Colors.white,
     fontSize: 16,
   },
   backButton: {
@@ -250,69 +244,6 @@ const styles = StyleSheet.create({
   backIcon: {
     width: 24,
     height: 24,
-    tintColor: "#fff",
-  },
-  topSection: {
-    position: "absolute",
-    top: 60,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    zIndex: 100,
-  },
-  topLeft: {
-    flex: 1,
-  },
-  topCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  lensFrame: {
-    width: 60,
-    height: 60,
-  },
-  frameContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  corner: {
-    position: "absolute",
-    width: 40,
-    height: 40,
-    borderColor: "#000",
-    borderWidth: 4,
-  },
-  topLeftCorner: {
-    top: FRAME_OFFSET,
-    left: FRAME_OFFSET,
-    borderRightWidth: 0,
-    borderBottomWidth: 0,
-  },
-  topRightCorner: {
-    top: FRAME_OFFSET,
-    right: FRAME_OFFSET,
-    borderLeftWidth: 0,
-    borderBottomWidth: 0,
-  },
-  bottomLeftCorner: {
-    bottom: FRAME_OFFSET + 120, // Account for bottom bar
-    left: FRAME_OFFSET,
-    borderRightWidth: 0,
-    borderTopWidth: 0,
-  },
-  bottomRightCorner: {
-    bottom: FRAME_OFFSET + 120, // Account for bottom bar
-    right: FRAME_OFFSET,
-    borderLeftWidth: 0,
-    borderTopWidth: 0,
   },
   tipsOverlay: {
     position: "absolute",
@@ -326,21 +257,38 @@ const styles = StyleSheet.create({
     zIndex: 200,
   },
   tipsContainer: {
-    backgroundColor: "#121212",
+    backgroundColor: Colors.surface,
     borderRadius: 20,
     padding: 24,
+    paddingTop: 40,
     marginHorizontal: 40,
     borderWidth: 1,
-    borderColor: "#4D4D4D",
+    borderColor: Colors.border,
+    position: "relative",
+  },
+  tipsCloseButton: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    width: 28,
+    height: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+  },
+  tipsCloseIcon: {
+    width: 20,
+    height: 20,
+    transform: [{ rotate: "180deg" }],
   },
   tipsTitle: {
-    color: "#f2f2f2",
+    color: Colors.textPrimary,
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 16,
   },
   tipsText: {
-    color: "#f2f2f2",
+    color: Colors.textPrimary,
     fontSize: 16,
     marginBottom: 12,
   },
@@ -349,7 +297,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#000",
+    backgroundColor: Colors.black,
     height: 120,
     justifyContent: "center",
     alignItems: "center",
@@ -381,9 +329,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#4D4D4D",
+    backgroundColor: Colors.surface,
     justifyContent: "center",
     alignItems: "center",
+  },
+  galleryIcon: {
+    width: 30,
   },
   tipsButton: {
     position: "absolute",
@@ -391,13 +342,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#4D4D4D",
+    backgroundColor: Colors.surface,
     justifyContent: "center",
     alignItems: "center",
   },
-  tipsButtonText: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "bold",
+  tipsIcon: {
+    width: 30,
   },
 });
+

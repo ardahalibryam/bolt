@@ -3,7 +3,8 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Dimensions, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getMyListings, Listing } from "./lib/listings";
+import { getMyListings, Listing } from "../lib/listings";
+import { Colors } from "./constants/Colors";
 
 const { width } = Dimensions.get("window");
 
@@ -78,7 +79,7 @@ export default function HistoryScreen() {
         onPress={() => router.push("/(tabs)")}
       >
         <Image
-          source={require("../assets/images/icons/nav/home.png")}
+          source={require("../assets/images/icons/nav/home-black.png")}
           style={styles.homeIcon}
           resizeMode="contain"
         />
@@ -90,7 +91,7 @@ export default function HistoryScreen() {
           style={styles.pfpImage}
           resizeMode="contain"
         />
-        <Text style={styles.title}>History</Text>
+        <Text style={styles.title}>Вашите обяви</Text>
       </View>
 
       {loading ? (
@@ -99,6 +100,7 @@ export default function HistoryScreen() {
         </View>
       ) : (
         <FlatList
+          style={styles.list}
           data={listings}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
@@ -115,7 +117,7 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#080808",
+    backgroundColor: Colors.background,
   },
   homeButton: {
     position: "absolute",
@@ -138,9 +140,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  list: {
+    flex: 1,
+    maxWidth: 500,
+  },
   listContent: {
     paddingBottom: 40,
-    alignItems: "center",
+    paddingHorizontal: 16,
   },
   pfpImage: {
     width: 80,
@@ -149,15 +155,15 @@ const styles = StyleSheet.create({
     borderRadius: 40,
   },
   title: {
-    color: "#f2f2f2",
+    color: Colors.textPrimary,
     fontSize: 28,
     marginBottom: 10,
     fontFamily: "Montserrat-Bold",
   },
   historyContainer: {
-    width: Math.min(width * 0.9, 500),
-    backgroundColor: "#121212",
-    borderColor: "#333",
+    width: "100%",
+    backgroundColor: Colors.surface,
+    borderColor: Colors.border,
     borderWidth: 1,
     borderRadius: 16,
     marginBottom: 16,
@@ -176,17 +182,17 @@ const styles = StyleSheet.create({
   historyItemTitle: {
     fontFamily: "Montserrat-Bold",
     fontSize: 18,
-    color: "#fff",
+    color: Colors.white,
     marginBottom: 6,
   },
   historyItemDate: {
     fontFamily: "Inter-Medium",
     fontSize: 12,
-    color: "#888",
+    color: Colors.textSecondary,
     marginBottom: 8,
   },
   priceBadge: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -196,18 +202,19 @@ const styles = StyleSheet.create({
     fontFamily: "Inter-Medium",
     fontSize: 14,
     fontWeight: "bold",
-    color: "#000",
+    color: Colors.black,
   },
   historyItemImage: {
     width: 70,
     height: 70,
     borderRadius: 12,
-    backgroundColor: "#333",
+    backgroundColor: Colors.border,
   },
   emptyText: {
-    color: "#666",
+    color: Colors.textSecondary,
     fontSize: 16,
     textAlign: "center",
     marginTop: 60,
   }
 });
+

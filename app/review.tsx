@@ -13,7 +13,8 @@ import {
     View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { finalizeDraft } from "./lib/drafts";
+import { finalizeDraft } from "../lib/drafts";
+import { Colors } from "./constants/Colors";
 
 export default function ReviewScreen() {
     const { draftId, title: initialTitle, description: initialDescription } = useLocalSearchParams<{
@@ -61,9 +62,6 @@ export default function ReviewScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Text style={styles.backText}>← Назад</Text>
-                </TouchableOpacity>
                 <Text style={styles.headerTitle}>Преглед</Text>
                 <View style={{ width: 60 }} />
             </View>
@@ -115,7 +113,7 @@ export default function ReviewScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#000",
+        backgroundColor: Colors.black,
     },
     header: {
         flexDirection: "row",
@@ -124,38 +122,30 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 15,
         borderBottomWidth: 1,
-        borderBottomColor: "#333",
+        borderBottomColor: Colors.border,
     },
     headerTitle: {
-        color: "#fff",
+        color: Colors.white,
         fontSize: 18,
         fontWeight: "bold",
-    },
-    backButton: {
-        padding: 5,
-        width: 60,
-    },
-    backText: {
-        color: "#007AFF",
-        fontSize: 16,
     },
     content: {
         padding: 20,
         paddingBottom: 40,
     },
     label: {
-        color: "#ccc",
+        color: Colors.textSecondary,
         fontSize: 14,
         marginBottom: 8,
         marginTop: 16,
     },
     input: {
-        backgroundColor: "#1A1A1A",
-        color: "#fff",
+        backgroundColor: Colors.surface,
+        color: Colors.white,
         padding: 16,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: "#333",
+        borderColor: Colors.border,
         fontSize: 16,
     },
     textArea: {
@@ -163,7 +153,7 @@ const styles = StyleSheet.create({
         paddingTop: 16,
     },
     publishButton: {
-        backgroundColor: "#007AFF",
+        backgroundColor: Colors.primary,
         padding: 16,
         borderRadius: 8,
         alignItems: "center",
@@ -173,8 +163,9 @@ const styles = StyleSheet.create({
         opacity: 0.6,
     },
     publishButtonText: {
-        color: "#fff",
+        color: Colors.white,
         fontSize: 16,
         fontWeight: "bold",
     },
 });
+

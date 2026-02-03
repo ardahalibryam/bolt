@@ -3,18 +3,22 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Colors } from "../constants/Colors";
 
 const onboardingData = [
   {
-    image: require("../../assets/images/camera-icon-1.png"),
+    icon: require("../../assets/images/camera-icon-1.png"),
+    image: require("../../assets/images/onboarding-image-1.png"),
     text: "Снимай предмета, който искаш да продадеш.",
   },
   {
-    image: require("../../assets/images/rocket-icon-1.png"),
+    icon: require("../../assets/images/rocket-icon-1.png"),
+    image: require("../../assets/images/onboarding-image-2.png"),
     text: "Виж каква е актуалната цена!",
   },
   {
-    image: require("../../assets/images/bell-icon-1.png"),
+    icon: require("../../assets/images/bell-icon-1.png"),
+    image: require("../../assets/images/onboarding-image-3.png"),
     text: "Генерирай обява с помощта на Изкуствен интелект.",
   },
 ];
@@ -39,58 +43,120 @@ export default function OnboardingScreen() {
     router.push("/(auth)/sign-up");
   };
 
+  const handleRegister = () => {
+    router.push("/(auth)/sign-up");
+  };
+
+  const handleLogin = () => {
+    router.push("/(auth)/sign-in");
+  };
+
+  const isLastSlide = currentSlide === onboardingData.length - 1;
+
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Logo */}
-      <View style={styles.logoContainer}>
+    <View style={styles.outerContainer}>
+      {/* Background Gradients */}
+      {currentSlide === 0 && (
         <Image
-          source={require("../../assets/images/logo.png")}
-          style={styles.logo}
-          resizeMode="contain"
+          source={require("../../assets/images/gradients/gradient-bg-1.png")}
+          style={styles.gradientTop}
+          resizeMode="cover"
         />
-      </View>
-
-      {/* Main Content */}
-      <View style={styles.content}>
+      )}
+      {currentSlide === 1 && (
         <Image
-          source={onboardingData[currentSlide].image}
-          style={styles.icon}
-          resizeMode="contain"
+          source={require("../../assets/images/gradients/gradient-bg-2.png")}
+          style={styles.gradientTop}
+          resizeMode="cover"
         />
-        <Text style={styles.text}>
-          {onboardingData[currentSlide].text}
-        </Text>
-      </View>
+      )}
+      {currentSlide === 2 && (
+        <Image
+          source={require("../../assets/images/gradients/gradient-bg-3.png")}
+          style={styles.gradientBottom}
+          resizeMode="cover"
+        />
+      )}
 
-      {/* Bottom Navigation */}
-      <View style={styles.bottomContainer}>
-        {/* Dots */}
-        <View style={styles.dotsContainer}>
-          {onboardingData.map((_, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.dot,
-                index === currentSlide ? styles.dotActive : styles.dotInactive,
-              ]}
-              onPress={() => handleDotPress(index)}
-            />
-          ))}
+      <SafeAreaView style={styles.container}>
+        {/* Icon at Top (replaces logo) */}
+        <View style={styles.logoContainer}>
+          <Image
+            source={onboardingData[currentSlide].icon}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
 
-        {/* Skip Text */}
-        <TouchableOpacity onPress={handleSkip}>
-          <Text style={styles.skipText}>Пропусни</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+        {/* Main Content */}
+        <View style={styles.content}>
+          <Image
+            source={onboardingData[currentSlide].image}
+            style={styles.onboardingImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.text}>
+            {onboardingData[currentSlide].text}
+          </Text>
+        </View>
+
+        {/* Bottom Navigation */}
+        <View style={styles.bottomContainer}>
+          {/* Dots */}
+          <View style={styles.dotsContainer}>
+            {onboardingData.map((_, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.dot,
+                  index === currentSlide ? styles.dotActive : styles.dotInactive,
+                ]}
+                onPress={() => handleDotPress(index)}
+              />
+            ))}
+          </View>
+
+          {/* Skip or Register/Login Buttons */}
+          {isLastSlide ? (
+            <View style={styles.buttonsContainer}>
+              <TouchableOpacity style={styles.primaryButton} onPress={handleRegister}>
+                <Text style={styles.primaryButtonText}>Регистрация</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.secondaryButton} onPress={handleLogin}>
+                <Text style={styles.secondaryButtonText}>Вход</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity onPress={handleSkip}>
+              <Text style={styles.skipText}>Пропусни</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#080808",
+    backgroundColor: "transparent",
+  },
+  gradientTop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+  },
+  gradientBottom: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    width: "100%",
   },
   logoContainer: {
     paddingTop: 40,
@@ -98,7 +164,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logo: {
-    width: 80,
+    marginTop: 20,
     height: 80,
   },
   content: {
@@ -107,15 +173,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
   },
-  icon: {
-    width: 200,
-    height: 200,
-    marginBottom: 40,
+  onboardingImage: {
+    width: 320,
+    marginBottom: 20,
   },
   text: {
     fontFamily: "Montserrat-Regular",
     fontSize: 30,
-    color: "#F2F2F2",
+    color: Colors.textPrimary,
     textAlign: "center",
     paddingHorizontal: 20,
     lineHeight: 36,
@@ -135,15 +200,44 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   dotActive: {
-    backgroundColor: "#1374F6",
+    backgroundColor: Colors.primary,
   },
   dotInactive: {
-    backgroundColor: "#B0E4FD",
+    backgroundColor: Colors.inactive,
   },
   skipText: {
     fontFamily: "Inter-SemiBold",
     fontSize: 16,
-    color: "#1374F6",
+    color: Colors.primary,
     textDecorationLine: "underline",
+  },
+  buttonsContainer: {
+    width: "100%",
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  primaryButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: 30,
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  primaryButtonText: {
+    fontFamily: "Inter-SemiBold",
+    fontSize: 18,
+    color: "#FFFFFF",
+  },
+  secondaryButton: {
+    backgroundColor: Colors.transparent,
+    borderRadius: 30,
+    paddingVertical: 16,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: Colors.primary,
+  },
+  secondaryButtonText: {
+    fontFamily: "Inter-SemiBold",
+    fontSize: 18,
+    color: Colors.primary,
   },
 });

@@ -2,7 +2,8 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getListing, Listing } from "../lib/listings";
+import { getListing, Listing } from "../../lib/listings";
+import { Colors } from "../constants/Colors";
 
 const { width } = Dimensions.get("window");
 
@@ -42,11 +43,19 @@ export default function ListingDetailsScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Text style={styles.backText}>← Назад</Text>
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => router.back()}
+                >
+                    <Image
+                        source={require("../../assets/images/icons/nav/arrow-back.svg")}
+                        style={styles.backIcon}
+                        tintColor={Colors.textPrimary}
+                        resizeMode="contain"
+                    />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle} numberOfLines={1}>Детайли</Text>
-                <View style={{ width: 60 }} />
+                <View style={{ width: 40 }} />
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
@@ -94,7 +103,7 @@ export default function ListingDetailsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#000",
+        backgroundColor: Colors.black,
     },
     center: {
         justifyContent: "center",
@@ -104,42 +113,42 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        paddingHorizontal: 20,
+        paddingHorizontal: 16,
         paddingVertical: 15,
         borderBottomWidth: 1,
-        borderBottomColor: "#333",
+        borderBottomColor: Colors.border,
+    },
+    backButton: {
+        padding: 8,
+        marginRight: 8,
+    },
+    backIcon: {
+        width: 24,
+        height: 24,
     },
     headerTitle: {
-        color: "#fff",
+        color: Colors.white,
         fontSize: 18,
         fontWeight: "bold",
         flex: 1,
         textAlign: "center",
-    },
-    backButton: {
-        padding: 5,
-        width: 60,
-    },
-    backText: {
-        color: "#007AFF",
-        fontSize: 16,
     },
     content: {
         paddingBottom: 40,
     },
     image: {
         width: width * 0.6,
-        height: width * 0.6,
+        height: width * 0.45,
         alignSelf: "center",
         borderRadius: 12,
         marginVertical: 16,
-        backgroundColor: "#121212",
+        backgroundColor: Colors.surface,
     },
     detailsContainer: {
         padding: 20,
     },
     title: {
-        color: "#fff",
+        color: Colors.white,
         fontSize: 24,
         fontWeight: "bold",
         marginBottom: 10,
@@ -151,52 +160,53 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     price: {
-        color: "#fff",
+        color: Colors.white,
         fontSize: 28,
         fontWeight: "bold",
     },
     date: {
-        color: "#888",
+        color: Colors.textSecondary,
         fontSize: 14,
     },
     divider: {
         height: 1,
-        backgroundColor: "#333",
+        backgroundColor: Colors.border,
         marginVertical: 20,
     },
     sectionTitle: {
-        color: "#ccc",
+        color: Colors.textSecondary,
         fontSize: 16,
         fontWeight: "bold",
         marginBottom: 10,
     },
     description: {
-        color: "#ddd",
+        color: Colors.textPrimary,
         fontSize: 16,
         lineHeight: 24,
     },
     platformBadge: {
         marginTop: 20,
-        backgroundColor: "#1A1A1A",
+        backgroundColor: Colors.surface,
         padding: 10,
         borderRadius: 8,
         alignSelf: "flex-start",
     },
     platformText: {
-        color: "#888",
+        color: Colors.textSecondary,
         fontSize: 14,
     },
     doneButton: {
         marginTop: 40,
-        backgroundColor: "#007AFF",
+        backgroundColor: Colors.primary,
         padding: 16,
         borderRadius: 8,
         alignItems: "center",
         width: "100%",
     },
     doneButtonText: {
-        color: "#fff",
+        color: Colors.white,
         fontSize: 16,
         fontWeight: "bold",
     },
 });
+

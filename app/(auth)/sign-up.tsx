@@ -3,16 +3,16 @@ import { router } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { register, storeToken } from "../lib/auth";
+import { register, storeToken } from "../../lib/auth";
+import { Colors } from "../constants/Colors";
 
 export default function SignUpScreen() {
   const [name, setName] = useState("");
@@ -117,19 +117,6 @@ export default function SignUpScreen() {
           </View>
         </View>
 
-        {/* Newsletter Checkbox */}
-        <TouchableOpacity
-          style={styles.checkboxContainer}
-          onPress={() => setNewsletterChecked(!newsletterChecked)}
-        >
-          <View style={styles.checkbox}>
-            {newsletterChecked && <View style={styles.checkboxInner} />}
-          </View>
-          <Text style={styles.checkboxText}>
-            Абонирай се за бюлетин и получавай най-актуалните цени!
-          </Text>
-        </TouchableOpacity>
-
         {/* Error Message */}
         {error && (
           <View style={styles.errorContainer}>
@@ -151,19 +138,19 @@ export default function SignUpScreen() {
         </TouchableOpacity>
 
         {/* Forgot Password Link */}
-        <TouchableOpacity style={styles.forgotPasswordContainer}>
+        <TouchableOpacity style={styles.forgotPasswordContainer} onPress={() => router.push("/(auth)/forgot-password")}>
           <Text style={styles.forgotPasswordText}>Забравена парола</Text>
         </TouchableOpacity>
 
         {/* Divider */}
-        <View style={styles.dividerContainer}>
+        {/* <View style={styles.dividerContainer}>
           <View style={styles.dividerLine} />
           <Text style={styles.dividerText}>или</Text>
           <View style={styles.dividerLine} />
-        </View>
+        </View> */}
 
         {/* Social Login Buttons */}
-        <View style={styles.socialContainer}>
+        {/* <View style={styles.socialContainer}>
           <TouchableOpacity style={styles.socialButton}>
             <Image
               source={require("../../assets/images/icons/auth/google_icon.png")}
@@ -181,7 +168,7 @@ export default function SignUpScreen() {
             />
             <Text style={styles.socialButtonText}>Продължи с Apple</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
       </ScrollView>
     </SafeAreaView>
   );
@@ -190,7 +177,7 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#080808",
+    backgroundColor: Colors.background,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -208,38 +195,42 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: "Montserrat-Regular",
     fontSize: 30,
-    color: "#F2F2F2",
+    color: Colors.textPrimary,
   },
   loginLink: {
     fontFamily: "Inter-Medium",
     fontSize: 16,
-    color: "#1374F6",
+    color: Colors.primary,
   },
   inputContainer: {
     marginBottom: 24,
   },
   input: {
-    backgroundColor: "#121212",
+    backgroundColor: Colors.surface,
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 16,
     fontSize: 16,
-    color: "#F2F2F2",
+    color: Colors.textPrimary,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   passwordContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#121212",
+    backgroundColor: Colors.surface,
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingRight: 0,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   passwordInput: {
     flex: 1,
     paddingVertical: 16,
     fontSize: 16,
-    color: "#F2F2F2",
+    color: Colors.textPrimary,
   },
   showButton: {
     paddingHorizontal: 16,
@@ -248,53 +239,24 @@ const styles = StyleSheet.create({
   showText: {
     fontFamily: "Inter-Medium",
     fontSize: 16,
-    color: "#1374F6",
+    color: Colors.primary,
   },
   errorContainer: {
     marginBottom: 16,
     padding: 12,
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    backgroundColor: "rgba(255, 69, 58, 0.1)",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.3)",
+    borderColor: "rgba(255, 69, 58, 0.3)",
   },
   errorText: {
     fontFamily: "Inter-Medium",
     fontSize: 14,
-    color: "#EF4444",
+    color: Colors.error,
     textAlign: "center",
   },
-  checkboxContainer: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 24,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 2,
-    borderColor: "#F2F2F2",
-    borderRadius: 4,
-    marginRight: 12,
-    marginTop: 2,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  checkboxInner: {
-    width: 12,
-    height: 12,
-    backgroundColor: "#1374F6",
-    borderRadius: 2,
-  },
-  checkboxText: {
-    flex: 1,
-    fontFamily: "Inter-Medium",
-    fontSize: 14,
-    color: "#F2F2F2",
-    lineHeight: 20,
-  },
   primaryButton: {
-    backgroundColor: "#1374F6",
+    backgroundColor: Colors.primary,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: "center",
@@ -306,7 +268,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontFamily: "Inter-SemiBold",
     fontSize: 16,
-    color: "#F2F2F2",
+    color: "#FFFFFF",
   },
   forgotPasswordContainer: {
     alignItems: "center",
@@ -315,45 +277,47 @@ const styles = StyleSheet.create({
   forgotPasswordText: {
     fontFamily: "Inter-SemiBold",
     fontSize: 14,
-    color: "#1374F6",
+    color: Colors.primary,
     textDecorationLine: "underline",
   },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#333333",
-  },
-  dividerText: {
-    fontFamily: "Inter-Regular",
-    fontSize: 14,
-    color: "#BFBFBF",
-    paddingHorizontal: 16,
-  },
-  socialContainer: {
-    gap: 12,
-  },
-  socialButton: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  socialIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 12,
-  },
-  socialButtonText: {
-    fontFamily: "Inter-SemiBold",
-    fontSize: 16,
-    color: "#4D4D4D",
-  },
+  // dividerContainer: {
+  //   flexDirection: "row",
+  //   alignItems: "center",
+  //   marginBottom: 24,
+  // },
+  // dividerLine: {
+  //   flex: 1,
+  //   height: 1,
+  //   backgroundColor: Colors.border,
+  // },
+  // dividerText: {
+  //   fontFamily: "Inter-Regular",
+  //   fontSize: 14,
+  //   color: Colors.textSecondary,
+  //   paddingHorizontal: 16,
+  // },
+  // socialContainer: {
+  //   gap: 12,
+  // },
+  // socialButton: {
+  //   backgroundColor: Colors.surface,
+  //   borderRadius: 12,
+  //   paddingVertical: 16,
+  //   paddingHorizontal: 16,
+  //   flexDirection: "row",
+  //   alignItems: "center",
+  //   justifyContent: "center",
+  //   borderWidth: 1,
+  //   borderColor: Colors.border,
+  // },
+  // socialIcon: {
+  //   width: 24,
+  //   height: 24,
+  //   marginRight: 12,
+  // },
+  // socialButtonText: {
+  //   fontFamily: "Inter-SemiBold",
+  //   fontSize: 16,
+  //   color: Colors.textPrimary,
+  // },
 });

@@ -1,9 +1,10 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ApiError } from "./lib/apiClient";
-import { DraftPricing, generateDraftPricing, generateDraftText, getDraftPricing } from "./lib/drafts";
+import { ApiError } from "../lib/apiClient";
+import { DraftPricing, generateDraftPricing, generateDraftText, getDraftPricing } from "../lib/drafts";
+import { Colors } from "./constants/Colors";
 
 export default function PriceScreen() {
   const { draftId } = useLocalSearchParams();
@@ -34,7 +35,7 @@ export default function PriceScreen() {
         // Already priced, continue
       } else {
         console.error("Pricing generation failed:", error);
-        setFetchError("Неуспешно генериране на цени.");
+        setFetchError("Не могат да се намерят достатъчно обяви в OLX, за да се генерира цена.");
         setLoading(false);
         return;
       }
@@ -108,11 +109,8 @@ export default function PriceScreen() {
     return (
       <SafeAreaView style={[styles.container, styles.center]}>
         <Text style={styles.errorText}>{fetchError || "Няма налични цени"}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={loadPricing}>
-          <Text style={styles.buttonText}>Опитайте отново</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.backButtonCenter} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Назад</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => router.back()}>
+          <Text style={styles.buttonText}>Назад</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -120,16 +118,6 @@ export default function PriceScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.back()}
-      >
-        <Image
-          source={require("../assets/images/icons/nav/arrow-back.svg")}
-          style={styles.backIcon}
-          resizeMode="contain"
-        />
-      </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Изберете цена</Text>
@@ -189,7 +177,7 @@ export default function PriceScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: Colors.black,
   },
   center: {
     justifyContent: "center",
@@ -200,20 +188,8 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: "center",
   },
-  backButton: {
-    position: "absolute",
-    top: 20,
-    left: 20,
-    zIndex: 1000,
-    padding: 8,
-  },
-  backIcon: {
-    width: 24,
-    height: 24,
-    tintColor: "#fff",
-  },
   title: {
-    color: "#fff",
+    color: Colors.white,
     fontSize: 24,
     marginBottom: 32,
     textAlign: "center",
@@ -223,37 +199,37 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#1A1A1A",
+    backgroundColor: Colors.surface,
     padding: 16,
     borderRadius: 12,
     marginBottom: 16,
     borderWidth: 2,
-    borderColor: "transparent",
+    borderColor: Colors.transparent,
   },
   selectedOption: {
-    borderColor: "#007AFF",
-    backgroundColor: "#1A1A1A", // Keep background dark but border highlights it
+    borderColor: Colors.primary,
+    backgroundColor: Colors.surface,
   },
   optionInfo: {
     flex: 1,
   },
   optionLabel: {
-    color: "#fff",
+    color: Colors.white,
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 4,
   },
   optionHelper: {
-    color: "#999",
+    color: Colors.textSecondary,
     fontSize: 14,
   },
   optionPrice: {
-    color: "#fff",
+    color: Colors.white,
     fontSize: 18,
     fontWeight: "bold",
   },
   button: {
-    backgroundColor: "#007AFF",
+    backgroundColor: Colors.primary,
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 8,
@@ -262,7 +238,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   retryButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: Colors.primary,
     paddingHorizontal: 32,
     paddingVertical: 12,
     borderRadius: 8,
@@ -272,21 +248,15 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   buttonText: {
-    color: "#fff",
+    color: Colors.white,
     fontSize: 16,
     fontWeight: "600",
   },
   errorText: {
-    color: "#FF453A",
+    color: Colors.error,
     fontSize: 18,
     textAlign: "center",
-  },
-  backButtonCenter: {
-    marginTop: 20,
-    padding: 10,
-  },
-  backButtonText: {
-    color: "#999",
-    fontSize: 16,
+    maxWidth: "80%",
   },
 });
+

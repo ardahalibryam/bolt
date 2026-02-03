@@ -103,3 +103,34 @@ export async function deleteAccount(currentPassword: string): Promise<void> {
     });
 }
 
+/**
+ * Requests a password reset email
+ * Always succeeds from user perspective (security: no user enumeration)
+ */
+export async function forgotPassword(email: string): Promise<void> {
+    await apiPost("/auth/forgot-password", { email }, { skipAuth: true });
+}
+
+/**
+ * Resets password using token from email link
+ * @throws Error with Bulgarian message on failure
+ */
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+    try {
+        await apiPost("/auth/reset-password", { token, newPassword }, { skipAuth: true });
+    } catch (error: any) {
+        let errorMessage = "Възникна грешка. Моля, опитайте отново.";
+
+        if (error.status === 400) {
+            // Check if it's a weak password or invalid token
+            const message = error.message?.toLowerCase() || "";
+            if (message.includes("password") || message.includes("парола")) {
+                errorMessage = "Паролата трябва да бъде поне 8 символа.";
+            } else {
+                errorMessage = "Линкът за възстановяване е невалиден или е изтекъл.";
+            }
+        }
+
+        throw new Error(errorMessage);
+    }
+}

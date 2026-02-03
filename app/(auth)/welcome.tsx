@@ -1,11 +1,14 @@
 import { useFonts } from "expo-font";
 import { router } from "expo-router";
-import { Image, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Colors } from "../constants/Colors";
+
+const { width, height } = Dimensions.get("window");
 
 export default function WelcomeScreen() {
   const [fontsLoaded] = useFonts({
-    "Montserrat-SemiBold": require("@expo-google-fonts/montserrat/Montserrat_600SemiBold.ttf"),
+    "Montserrat-Bold": require("@expo-google-fonts/montserrat/Montserrat_700Bold.ttf"),
     "Inter-Medium": require("@expo-google-fonts/inter/Inter_500Medium.ttf"),
   });
 
@@ -14,20 +17,19 @@ export default function WelcomeScreen() {
   }
 
   return (
-    <ImageBackground
-      source={require("../../assets/images/welcome-bg.png")}
-      style={styles.background}
-      resizeMode="cover"
-    >
-      <SafeAreaView style={styles.container}>
-        <View style={styles.content}>
-          {/* Logo */}
-          <Image
-            source={require("../../assets/images/logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+    <View style={styles.container}>
+      {/* Top Image Section */}
+      <View style={styles.imageContainer}>
+        <Image
+          source={require("../../assets/images/welcome-bg-white.png")}
+          style={styles.heroImage}
+          resizeMode="cover"
+        />
+      </View>
 
+      {/* Bottom Content Section */}
+      <SafeAreaView style={styles.contentContainer} edges={["bottom"]}>
+        <View style={styles.content}>
           {/* Heading */}
           <View style={styles.headingContainer}>
             <Text style={styles.heading}>Снимай.</Text>
@@ -44,53 +46,55 @@ export default function WelcomeScreen() {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </ImageBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
+  container: {
     flex: 1,
+    backgroundColor: Colors.background,
+  },
+  imageContainer: {
+    flex: 1,
+    width: "100%",
+  },
+  heroImage: {
     width: "100%",
     height: "100%",
   },
-  container: {
-    flex: 1,
+  contentContainer: {
+    flex: 0.6,
+    backgroundColor: Colors.background,
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    paddingBottom: 40,
   },
   content: {
-    flex: 1,
-    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingBottom: 60,
-  },
-  logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 60,
   },
   headingContainer: {
     alignItems: "center",
-    marginBottom: 60,
+    marginBottom: 32,
   },
   heading: {
-    fontFamily: "Montserrat-SemiBold",
-    fontSize: 60,
-    color: "#F2F2F2",
-    lineHeight: 72,
+    fontFamily: "Montserrat-Bold",
+    fontSize: 48,
+    color: Colors.textPrimary,
+    lineHeight: 58,
     textAlign: "center",
   },
   button: {
-    backgroundColor: "#1374F6",
+    backgroundColor: Colors.primary,
     paddingHorizontal: 48,
-    paddingVertical: 18,
-    borderRadius: 12,
+    paddingVertical: 16,
+    borderRadius: 30,
     minWidth: 200,
     alignItems: "center",
   },
   buttonText: {
     fontFamily: "Inter-Medium",
-    fontSize: 20,
-    color: "#F2F2F2",
+    fontSize: 18,
+    color: "#FFFFFF",
   },
 });

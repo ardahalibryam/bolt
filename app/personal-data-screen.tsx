@@ -14,8 +14,9 @@ import {
     View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { changePassword, deleteAccount, getMe, removeToken } from "./lib/auth";
-import { clearActiveDraft } from "./lib/draftPersistence";
+import { changePassword, deleteAccount, getMe, removeToken } from "../lib/auth";
+import { clearActiveDraft } from "../lib/draftPersistence";
+import { Colors } from "./constants/Colors";
 
 export default function PersonalDataScreen() {
     const [email, setEmail] = useState("");
@@ -287,7 +288,7 @@ export default function PersonalDataScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#000",
+        backgroundColor: Colors.black,
     },
     center: {
         justifyContent: "center",
@@ -300,10 +301,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 15,
         borderBottomWidth: 1,
-        borderBottomColor: "#333",
+        borderBottomColor: Colors.border,
     },
     headerTitle: {
-        color: "#fff",
+        color: Colors.white,
         fontSize: 18,
         fontWeight: "bold",
     },
@@ -311,7 +312,7 @@ const styles = StyleSheet.create({
         padding: 8,
     },
     backButtonText: {
-        color: "#007AFF",
+        color: Colors.primary,
         fontSize: 16,
     },
     content: {
@@ -319,45 +320,45 @@ const styles = StyleSheet.create({
         paddingBottom: 50,
     },
     sectionTitle: {
-        color: "#fff",
+        color: Colors.white,
         fontSize: 20,
         fontWeight: "bold",
         marginBottom: 16,
         marginTop: 10,
     },
     label: {
-        color: "#ccc",
+        color: Colors.textSecondary,
         fontSize: 14,
         marginBottom: 8,
         marginTop: 8,
     },
     input: {
-        backgroundColor: "#1A1A1A",
-        color: "#fff",
+        backgroundColor: Colors.surface,
+        color: Colors.white,
         padding: 16,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: "#333",
+        borderColor: Colors.border,
         fontSize: 16,
     },
     disabledInput: {
-        backgroundColor: "#121212",
+        backgroundColor: Colors.surface,
         padding: 16,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: "#333",
+        borderColor: Colors.border,
     },
     disabledInputText: {
-        color: "#888",
+        color: Colors.textSecondary,
         fontSize: 16,
     },
     divider: {
         height: 1,
-        backgroundColor: "#333",
+        backgroundColor: Colors.border,
         marginVertical: 30,
     },
     button: {
-        backgroundColor: "#007AFF",
+        backgroundColor: Colors.primary,
         padding: 16,
         borderRadius: 8,
         alignItems: "center",
@@ -367,40 +368,40 @@ const styles = StyleSheet.create({
         opacity: 0.6,
     },
     buttonText: {
-        color: "#fff",
+        color: Colors.white,
         fontSize: 16,
         fontWeight: "bold",
     },
     dangerZone: {
         marginTop: 10,
         padding: 16,
-        backgroundColor: "rgba(255, 69, 58, 0.1)", // Red tint
+        backgroundColor: "rgba(255, 69, 58, 0.1)",
         borderRadius: 12,
         borderWidth: 1,
         borderColor: "rgba(255, 69, 58, 0.3)",
     },
     dangerTitle: {
-        color: "#FF453A",
+        color: Colors.error,
         fontSize: 18,
         fontWeight: "bold",
         marginBottom: 8,
     },
     dangerText: {
-        color: "#FF453A",
+        color: Colors.error,
         fontSize: 14,
         marginBottom: 16,
         lineHeight: 20,
     },
     deleteButton: {
-        backgroundColor: "transparent",
+        backgroundColor: Colors.transparent,
         borderWidth: 1,
-        borderColor: "#FF453A",
+        borderColor: Colors.error,
         padding: 12,
         borderRadius: 8,
         alignItems: "center",
     },
     deleteButtonText: {
-        color: "#FF453A",
+        color: Colors.error,
         fontSize: 16,
         fontWeight: "600",
     },
@@ -413,30 +414,30 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     modalContent: {
-        backgroundColor: "#1C1C1E",
+        backgroundColor: Colors.surface,
         borderRadius: 14,
         padding: 24,
     },
     modalTitle: {
-        color: "#fff",
+        color: Colors.white,
         fontSize: 20,
         fontWeight: "bold",
         textAlign: "center",
         marginBottom: 12,
     },
     modalText: {
-        color: "#ccc",
+        color: Colors.textSecondary,
         fontSize: 16,
         textAlign: "center",
         marginBottom: 24,
     },
     modalInput: {
-        backgroundColor: "#000",
-        color: "#fff",
+        backgroundColor: Colors.black,
+        color: Colors.white,
         padding: 16,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: "#333",
+        borderColor: Colors.border,
         fontSize: 16,
         marginBottom: 24,
     },
@@ -448,34 +449,35 @@ const styles = StyleSheet.create({
     modalCancelButton: {
         flex: 1,
         padding: 14,
-        backgroundColor: "#333",
+        backgroundColor: Colors.border,
         borderRadius: 8,
         alignItems: "center",
     },
     modalCancelText: {
-        color: "#fff",
+        color: Colors.white,
         fontSize: 16,
         fontWeight: "600",
     },
     modalDeleteButton: {
         flex: 1,
         padding: 14,
-        backgroundColor: "#FF453A",
+        backgroundColor: Colors.error,
         borderRadius: 8,
         alignItems: "center",
     },
     modalDeleteText: {
-        color: "#fff",
+        color: Colors.white,
         fontSize: 16,
         fontWeight: "600",
     },
     inputError: {
-        borderColor: "#FF453A",
+        borderColor: Colors.error,
     },
     errorText: {
-        color: "#FF453A",
+        color: Colors.error,
         fontSize: 14,
         marginTop: 4,
         marginBottom: 8,
     },
 });
+

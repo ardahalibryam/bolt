@@ -1,6 +1,7 @@
 import { useFonts } from "expo-font";
 import { Tabs, useRouter } from "expo-router";
 import { Image, StyleSheet } from "react-native";
+import { Colors } from "../constants/Colors";
 
 export default function TabsLayout() {
   const router = useRouter();
@@ -13,11 +14,11 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#121212",
-          borderTopWidth: 0,
-          height: 70,
-          paddingTop: 8,
-          paddingBottom: 8,
+          backgroundColor: Colors.tabBarBackground,
+          borderTopWidth: 1,
+          height: 90,
+          paddingTop: 20,
+          borderColor: Colors.border,
         },
         tabBarShowLabel: true,
         tabBarLabelStyle: {
@@ -25,8 +26,8 @@ export default function TabsLayout() {
           fontSize: 12,
           marginTop: 4,
         },
-        tabBarActiveTintColor: "#1374F6",
-        tabBarInactiveTintColor: "#BFBFBF",
+        tabBarActiveTintColor: Colors.primary,
+        tabBarInactiveTintColor: Colors.inactive,
       }}
     >
       <Tabs.Screen
@@ -36,7 +37,8 @@ export default function TabsLayout() {
           tabBarIcon: ({ color }) => (
             <Image
               source={require("../../assets/images/icons/nav/home.png")}
-              style={[styles.icon, { tintColor: color }]}
+              style={styles.icon}
+              tintColor={color}
               resizeMode="contain"
             />
           ),
@@ -48,7 +50,7 @@ export default function TabsLayout() {
           title: "",
           tabBarIcon: () => (
             <Image
-              source={require("../../assets/images/icons/nav/menu-snap.png")}
+              source={require("../../assets/images/icons/nav/menu-snap-black.png")}
               style={styles.snapIcon}
               resizeMode="contain"
             />
@@ -69,7 +71,8 @@ export default function TabsLayout() {
           tabBarIcon: ({ color }) => (
             <Image
               source={require("../../assets/images/icons/nav/user.png")}
-              style={[styles.icon, { tintColor: color }]}
+              style={styles.icon}
+              tintColor={color}
               resizeMode="contain"
             />
           ),
