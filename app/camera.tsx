@@ -26,9 +26,9 @@ export default function CameraScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.permissionContainer}>
-          <Text style={styles.permissionText}>We need your permission to use the camera</Text>
+          <Text style={styles.permissionText}>Нужен е достъп до камерата</Text>
           <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-            <Text style={styles.permissionButtonText}>Grant Permission</Text>
+            <Text style={styles.permissionButtonText}>Разрешете достъп</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -122,7 +122,7 @@ export default function CameraScreen() {
           onPress={() => router.back()}
         >
           <Image
-            source={require("../assets/images/icons/nav/arrow-back.svg")}
+            source={require("../assets/images/icons/nav/arrow-back.png")}
             style={styles.backIcon}
             tintColor={Colors.white}
             resizeMode="contain"
@@ -138,7 +138,7 @@ export default function CameraScreen() {
                 onPress={() => setShowTips(false)}
               >
                 <Image
-                  source={require("../assets/images/icons/camera/close.svg")}
+                  source={require("../assets/images/icons/camera/close.png")}
                   style={styles.tipsCloseIcon}
                   tintColor={Colors.textPrimary}
                   resizeMode="contain"
@@ -153,6 +153,14 @@ export default function CameraScreen() {
           </View>
         )}
 
+        {/* Loading Overlay - shown while processing image */}
+        {isCreatingDraft && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+            <Text style={styles.loadingText}>Обработване...</Text>
+          </View>
+        )}
+
         {/* Bottom Control Bar */}
         <View style={styles.bottomBar}>
           <View style={styles.bottomBarContent}>
@@ -163,7 +171,7 @@ export default function CameraScreen() {
               disabled={isCreatingDraft}
             >
               <Image
-                source={require("../assets/images/icons/camera/gallery.svg")}
+                source={require("../assets/images/icons/camera/gallery.png")}
                 style={styles.galleryIcon}
                 resizeMode="contain"
               />
@@ -192,7 +200,7 @@ export default function CameraScreen() {
               onPress={() => setShowTips(!showTips)}
             >
               <Image
-                source={require("../assets/images/icons/camera/help.svg")}
+                source={require("../assets/images/icons/camera/help.png")}
                 style={styles.tipsIcon}
                 resizeMode="contain"
               />
@@ -348,6 +356,23 @@ const styles = StyleSheet.create({
   },
   tipsIcon: {
     width: 30,
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 300,
+  },
+  loadingText: {
+    color: Colors.white,
+    fontSize: 18,
+    marginTop: 16,
+    fontWeight: "500",
   },
 });
 

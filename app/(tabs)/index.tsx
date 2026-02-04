@@ -105,7 +105,7 @@ export default function HomeScreen() {
                 </View>
                 <View style={styles.ctaArrowContainer}>
                   <Image
-                    source={require("../../assets/images/icons/profile/arrow.svg")}
+                    source={require("../../assets/images/icons/profile/arrow.png")}
                     style={styles.ctaArrow}
                     tintColor="#FFFFFF"
                     resizeMode="contain"
@@ -139,7 +139,7 @@ export default function HomeScreen() {
                     Как да заснемете най-добрите снимки за вашата обява!?
                   </Text>
                   <Image
-                    source={require("../../assets/images/icons/profile/arrow.svg")}
+                    source={require("../../assets/images/icons/profile/arrow.png")}
                     style={styles.tipsArrow}
                     tintColor={Colors.primary}
                     resizeMode="contain"
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 16,
-    marginTop: 16,
+    marginTop: 32,
   },
   greeting: {
     fontFamily: "Montserrat-SemiBold",

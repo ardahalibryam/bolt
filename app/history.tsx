@@ -1,7 +1,7 @@
 import { useFonts } from "expo-font";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Dimensions, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getMyListings, Listing } from "../lib/listings";
 import { Colors } from "./constants/Colors";
@@ -94,22 +94,16 @@ export default function HistoryScreen() {
         <Text style={styles.title}>Вашите обяви</Text>
       </View>
 
-      {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#fff" />
-        </View>
-      ) : (
-        <FlatList
-          style={styles.list}
-          data={listings}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>Все още нямате история.</Text>
-          }
-        />
-      )}
+      <FlatList
+        style={styles.list}
+        data={listings}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>Все още нямате история.</Text>
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -121,7 +115,7 @@ const styles = StyleSheet.create({
   },
   homeButton: {
     position: "absolute",
-    top: 20,
+    top: 50,
     left: 20,
     zIndex: 1000,
     padding: 8,

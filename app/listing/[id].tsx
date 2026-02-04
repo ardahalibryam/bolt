@@ -1,7 +1,8 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LoadingScreen } from "../../components/LoadingScreen";
 import { getListing, Listing } from "../../lib/listings";
 import { Colors } from "../constants/Colors";
 
@@ -31,11 +32,7 @@ export default function ListingDetailsScreen() {
     };
 
     if (loading) {
-        return (
-            <SafeAreaView style={[styles.container, styles.center]}>
-                <ActivityIndicator size="large" color="#fff" />
-            </SafeAreaView>
-        );
+        return <LoadingScreen />;
     }
 
     if (!listing) return null;
@@ -48,7 +45,7 @@ export default function ListingDetailsScreen() {
                     onPress={() => router.back()}
                 >
                     <Image
-                        source={require("../../assets/images/icons/nav/arrow-back.svg")}
+                        source={require("../../assets/images/icons/nav/arrow-back.png")}
                         style={styles.backIcon}
                         tintColor={Colors.textPrimary}
                         resizeMode="contain"

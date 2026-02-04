@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LoadingScreen } from "../components/LoadingScreen";
 import { ApiError } from "../lib/apiClient";
 import { DraftPricing, generateDraftPricing, generateDraftText, getDraftPricing } from "../lib/drafts";
 import { Colors } from "./constants/Colors";
@@ -98,11 +99,7 @@ export default function PriceScreen() {
   };
 
   if (loading) {
-    return (
-      <SafeAreaView style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#fff" />
-      </SafeAreaView>
-    );
+    return <LoadingScreen />;
   }
 
   if (fetchError || !pricing) {

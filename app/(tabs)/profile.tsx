@@ -37,40 +37,40 @@ export default function ProfileScreen() {
           <View style={styles.profileContainer}>
             <TouchableOpacity style={styles.profileItem} onPress={() => router.push("/personal-data-screen")}>
               <View style={styles.profileItemContent}>
-                <Image source={require("../../assets/images/icons/profile/profile.svg")} style={styles.profileItemImage} resizeMode="contain" />
+                <Image source={require("../../assets/images/icons/profile/profile.png")} style={styles.profileItemImage} resizeMode="contain" />
                 <Text style={styles.profileItemText}>Лични данни</Text>
               </View>
-              <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" />
+              <Image source={require("../../assets/images/icons/profile/arrow.png")} style={styles.profileItemImage} resizeMode="contain" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.profileItem} onPress={rateApp}>
               <View style={styles.profileItemContent}>
-                <Image source={require("../../assets/images/icons/profile/star.svg")} style={styles.profileItemImage} resizeMode="contain" />
+                <Image source={require("../../assets/images/icons/profile/star.png")} style={styles.profileItemImage} resizeMode="contain" />
                 <Text style={styles.profileItemText}>Оцени ни</Text>
               </View>
-              <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" />
+              <Image source={require("../../assets/images/icons/profile/arrow.png")} style={styles.profileItemImage} resizeMode="contain" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.profileItem} onPress={() => Linking.openURL("https://boltbg.info/#/privacy")}>
               <View style={styles.profileItemContent}>
-                <Image source={require("../../assets/images/icons/profile/shield.svg")} style={styles.profileItemImage} resizeMode="contain" />
+                <Image source={require("../../assets/images/icons/profile/shield.png")} style={styles.profileItemImage} resizeMode="contain" />
                 <Text style={styles.profileItemText}>Поверителност</Text>
               </View>
-              <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" />
+              <Image source={require("../../assets/images/icons/profile/arrow.png")} style={styles.profileItemImage} resizeMode="contain" />
             </TouchableOpacity>
             <TouchableOpacity style={[styles.profileItem, styles.profileItemLast]} onPress={() => Linking.openURL("https://boltbg.info/#/support")}>
               <View style={styles.profileItemContent}>
-                <Image source={require("../../assets/images/icons/profile/help.svg")} style={styles.profileItemImage} resizeMode="contain" />
+                <Image source={require("../../assets/images/icons/profile/help.png")} style={styles.profileItemImage} resizeMode="contain" />
                 <Text style={styles.profileItemText}>Помощ</Text>
               </View>
-              <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" />
+              <Image source={require("../../assets/images/icons/profile/arrow.png")} style={styles.profileItemImage} resizeMode="contain" />
             </TouchableOpacity>
           </View>
           <View style={styles.profileContainer}>
             <TouchableOpacity style={[styles.profileItem, styles.profileItemLast]} onPress={handleLogout}>
               <View style={styles.profileItemContent}>
-                <Image source={require("../../assets/images/icons/profile/logout.svg")} style={styles.profileItemImage} resizeMode="contain" />
+                <Image source={require("../../assets/images/icons/profile/logout.png")} style={styles.profileItemImage} resizeMode="contain" />
                 <Text style={styles.profileItemText}>Изход</Text>
               </View>
-              <Image source={require("../../assets/images/icons/profile/arrow.svg")} style={styles.profileItemImage} resizeMode="contain" />
+              <Image source={require("../../assets/images/icons/profile/arrow.png")} style={styles.profileItemImage} resizeMode="contain" />
             </TouchableOpacity>
           </View>
         </View>
@@ -134,10 +134,16 @@ const styles = StyleSheet.create({
   },
   profileItemContent: {
     flexDirection: "row",
-    gap: 20,
+    alignItems: "center",
+    gap: 16,
   },
   profileItemImage: {
     width: 20,
+    height: 20,
+  },
+  profileItemArrow: {
+    width: 14,
+    height: 14,
   },
   profileItemText: {
     fontFamily: "Montserrat-Medium",

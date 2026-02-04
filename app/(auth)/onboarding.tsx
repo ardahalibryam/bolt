@@ -191,13 +191,14 @@ const styles = StyleSheet.create({
   },
   dotsContainer: {
     flexDirection: "row",
-    gap: 12,
+    gap: 16,
     marginBottom: 20,
   },
   dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    padding: 8, // Extra touch area
   },
   dotActive: {
     backgroundColor: Colors.primary,
