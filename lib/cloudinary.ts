@@ -1,5 +1,5 @@
-const CLOUDINARY_CLOUD_NAME = "drsamqwk7";
-const CLOUDINARY_UPLOAD_PRESET = "ProjectBolt";
+const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME || "";
+const CLOUDINARY_UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "";
 
 interface CloudinaryResponse {
     secure_url: string;

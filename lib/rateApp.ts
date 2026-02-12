@@ -7,8 +7,8 @@ import { Alert, Platform } from "react-native";
 const RATE_LIMIT_KEY = "last_review_request_timestamp";
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
-// TODO: Replace with your actual IDs
-const ANDROID_PACKAGE_NAME = "com.bolt.app";
+const ANDROID_PACKAGE_NAME = "info.boltbg.app";
+// TODO: Replace with your actual Apple App Store ID before iOS submission
 const IOS_APP_ID = "id123456789";
 
 // Platform-specific Store URLs

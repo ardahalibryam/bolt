@@ -20,7 +20,10 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.bolt"
+      "versionCode": 1,
+      "targetSdkVersion": 35,
+      "package": "info.boltbg.app",
+      "privacyPolicyUrl": "https://boltbg.info/#/privacy"
     },
     "web": {
       "output": "static"
