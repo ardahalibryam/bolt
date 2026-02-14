@@ -97,7 +97,8 @@ export async function rateApp() {
     // 2. Rate Limiting
     const canRequest = await checkRateLimit();
     if (!canRequest) {
-        return; // Silently exit if we asked recently
+        await openStorePage(); // Still take the user to the store
+        return;
     }
 
     // 3. Eligibility Check

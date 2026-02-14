@@ -14,8 +14,10 @@ import {
     View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import PasswordChecklist from "../components/PasswordChecklist";
 import { changePassword, deleteAccount, getMe, removeToken } from "../lib/auth";
 import { clearActiveDraft } from "../lib/draftPersistence";
+import { isPasswordValid, validatePassword } from "../lib/passwordValidation";
 import { Colors } from "./constants/Colors";
 
 export default function PersonalDataScreen() {
@@ -69,8 +71,8 @@ export default function PersonalDataScreen() {
         if (!newPass) {
             newErrors.new = "Моля, въведете нова парола.";
             hasError = true;
-        } else if (newPass.length < minLen) {
-            newErrors.new = `Паролата трябва да е поне ${minLen} символа.`;
+        } else if (!isPasswordValid(validatePassword(newPass))) {
+            newErrors.new = "Паролата не отговаря на изискванията за сигурност.";
             hasError = true;
         } else if (newPass === current) {
             newErrors.new = "Новата парола трябва да е различна.";
@@ -189,6 +191,7 @@ export default function PersonalDataScreen() {
                         placeholderTextColor="#666"
                     />
                     {errors.new && <Text style={styles.errorText}>{errors.new}</Text>}
+                    <PasswordChecklist password={newPassword} />
 
                     <Text style={styles.label}>Потвърди нова парола</Text>
                     <TextInput

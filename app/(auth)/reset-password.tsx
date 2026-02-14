@@ -10,7 +10,9 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import PasswordChecklist from "../../components/PasswordChecklist";
 import { resetPassword } from "../../lib/auth";
+import { isPasswordValid, validatePassword } from "../../lib/passwordValidation";
 import { Colors } from "../constants/Colors";
 
 export default function ResetPasswordScreen() {
@@ -58,8 +60,8 @@ export default function ResetPasswordScreen() {
     const validateForm = (): boolean => {
         setValidationError(null);
 
-        if (newPassword.length < 8) {
-            setValidationError("Паролата трябва да бъде поне 8 символа.");
+        if (!isPasswordValid(validatePassword(newPassword))) {
+            setValidationError("Паролата не отговаря на изискванията за сигурност.");
             return false;
         }
 
@@ -146,6 +148,8 @@ export default function ResetPasswordScreen() {
                             <Text style={styles.showText}>{showPassword ? "Скрий" : "Покажи"}</Text>
                         </TouchableOpacity>
                     </View>
+
+                    <PasswordChecklist password={newPassword} />
 
                     <View style={styles.passwordContainer}>
                         <TextInput

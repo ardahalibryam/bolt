@@ -11,7 +11,9 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import PasswordChecklist from "../../components/PasswordChecklist";
 import { register, storeToken } from "../../lib/auth";
+import { isPasswordValid, validatePassword } from "../../lib/passwordValidation";
 import { Colors } from "../constants/Colors";
 
 export default function SignUpScreen() {
@@ -42,8 +44,8 @@ export default function SignUpScreen() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Паролата трябва да бъде поне 6 символа.");
+    if (!isPasswordValid(validatePassword(password))) {
+      setError("Паролата не отговаря на изискванията за сигурност.");
       return;
     }
 
@@ -116,6 +118,9 @@ export default function SignUpScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Password Checklist */}
+        <PasswordChecklist password={password} />
 
         {/* Error Message */}
         {error && (
