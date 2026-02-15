@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import PasswordChecklist from "../../components/PasswordChecklist";
-import { register, storeToken } from "../../lib/auth";
+import { register } from "../../lib/auth";
 import { isPasswordValid, validatePassword } from "../../lib/passwordValidation";
 import { Colors } from "../constants/Colors";
 
@@ -53,14 +53,14 @@ export default function SignUpScreen() {
     setIsLoading(true);
 
     try {
-      const token = await register(email.trim(), password);
-      if (token) {
-        await storeToken(token);
-        router.replace("/(tabs)/" as any);
-      } else {
-        // Fallback if no token returned, redirect to login
-        router.replace("/(auth)/sign-in");
-      }
+      // Register now returns void (no token)
+      await register(email.trim(), password);
+
+      // Redirect to verification screen
+      router.replace({
+        pathname: "/(auth)/verify-email",
+        params: { email: email.trim() }
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Възникна неочаквана грешка.";
       setError(message);

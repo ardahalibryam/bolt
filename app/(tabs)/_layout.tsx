@@ -1,10 +1,12 @@
 import { useFonts } from "expo-font";
 import { Tabs, useRouter } from "expo-router";
 import { Image, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../constants/Colors";
 
 export default function TabsLayout() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [fontsLoaded] = useFonts({
     "Inter-Medium": require("@expo-google-fonts/inter/Inter_500Medium.ttf"),
   });
@@ -16,8 +18,9 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: Colors.tabBarBackground,
           borderTopWidth: 1,
-          height: 90,
-          paddingTop: 20,
+          height: 60 + insets.bottom,
+          paddingTop: 8,
+          paddingBottom: insets.bottom,
           borderColor: Colors.border,
         },
         tabBarShowLabel: true,

@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -42,7 +43,26 @@ export default function SignInScreen() {
       const token = await login(email.trim(), password);
       await storeToken(token);
       router.replace("/(tabs)/" as any);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.message === "EMAIL_NOT_VERIFIED") {
+        Alert.alert(
+          "Имейлът не е потвърден",
+          "Моля, потвърдете имейла си, за да влезете.",
+          [
+            { text: "Отказ", style: "cancel" },
+            {
+              text: "Към потвърждение",
+              onPress: () => router.push({
+                pathname: "/(auth)/verify-email",
+                params: { email: email.trim() }
+              })
+            }
+          ]
+        );
+        setIsLoading(false);
+        return;
+      }
+
       const message = err instanceof Error ? err.message : "Възникна неочаквана грешка.";
       setError(message);
     } finally {
