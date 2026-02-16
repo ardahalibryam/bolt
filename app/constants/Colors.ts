@@ -38,4 +38,6 @@ export const Colors = {
 
     /** Tab bar background */
     tabBarBackground: '#ffffff',
+
+    textLight: '#080808',
 } as const;

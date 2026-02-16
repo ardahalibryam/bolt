@@ -47,10 +47,10 @@ export default function CameraScreen() {
       console.log("Image uploaded successfully:", imageUrl);
 
       console.log("Creating draft with URL...");
-      const draftId = await createDraft(imageUrl);
+      const { draftId, detectedNameBg } = await createDraft(imageUrl);
       console.log("Draft created successfully, ID:", draftId);
 
-      router.push({ pathname: "/price", params: { draftId } });
+      router.push({ pathname: "/price", params: { draftId, productName: detectedNameBg || "" } });
     } catch (error) {
       console.error("Error in image processing flow:", error);
       const message = error instanceof Error ? error.message : "Възникна грешка. Моля, опитайте отново.";

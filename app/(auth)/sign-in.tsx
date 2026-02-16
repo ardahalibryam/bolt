@@ -3,7 +3,6 @@ import { router } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,7 +11,7 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { login, storeToken } from "../../lib/auth";
+import { login, setPendingVerification, storeToken } from "../../lib/auth";
 import { Colors } from "../constants/Colors";
 
 export default function SignInScreen() {
@@ -21,6 +20,7 @@ export default function SignInScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showVerifyBanner, setShowVerifyBanner] = useState(false);
 
   const [fontsLoaded] = useFonts({
     "Montserrat-Regular": require("@expo-google-fonts/montserrat/Montserrat_400Regular.ttf"),
@@ -45,20 +45,8 @@ export default function SignInScreen() {
       router.replace("/(tabs)/" as any);
     } catch (err: any) {
       if (err.message === "EMAIL_NOT_VERIFIED") {
-        Alert.alert(
-          "Имейлът не е потвърден",
-          "Моля, потвърдете имейла си, за да влезете.",
-          [
-            { text: "Отказ", style: "cancel" },
-            {
-              text: "Към потвърждение",
-              onPress: () => router.push({
-                pathname: "/(auth)/verify-email",
-                params: { email: email.trim() }
-              })
-            }
-          ]
-        );
+        setShowVerifyBanner(true);
+        setError(null);
         setIsLoading(false);
         return;
       }
@@ -116,6 +104,27 @@ export default function SignInScreen() {
             </View>
           </View>
         </View>
+
+        {/* Verify Email Banner */}
+        {showVerifyBanner && (
+          <View style={styles.verifyBanner}>
+            <Text style={styles.verifyBannerText}>
+              Имейлът не е потвърден. Моля, потвърдете имейла си, за да влезете.
+            </Text>
+            <TouchableOpacity
+              style={styles.verifyBannerButton}
+              onPress={async () => {
+                await setPendingVerification(email.trim());
+                router.push({
+                  pathname: "/(auth)/verify-email",
+                  params: { email: email.trim(), autoSend: "true" }
+                });
+              }}
+            >
+              <Text style={styles.verifyBannerButtonText}>Потвърди имейл</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Error Message */}
         {error && (
@@ -322,4 +331,30 @@ const styles = StyleSheet.create({
   //   fontSize: 16,
   //   color: Colors.textPrimary,
   // },
+  verifyBanner: {
+    backgroundColor: "#FFF3E0",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#FFB74D",
+  },
+  verifyBannerText: {
+    fontFamily: "Inter-Regular",
+    fontSize: 14,
+    color: "#E65100",
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  verifyBannerButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center" as const,
+  },
+  verifyBannerButtonText: {
+    fontFamily: "Inter-SemiBold",
+    fontSize: 14,
+    color: "#FFFFFF",
+  },
 });

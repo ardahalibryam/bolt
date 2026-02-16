@@ -2,6 +2,8 @@ import { apiGet, apiPost } from "./apiClient";
 
 export interface CreateDraftResponse {
     draftId: string;
+    detectedName?: string;
+    detectedNameBg?: string;
 }
 
 export interface DraftPricing {
@@ -31,11 +33,10 @@ export interface GenerateTextResponse {
 /**
  * Creates a new draft listing with an image
  * @param imageUrl - URL of the uploaded image
- * @returns The created draft ID
+ * @returns The created draft ID and detected product name
  */
-export async function createDraft(imageUrl: string): Promise<string> {
-    const response = await apiPost<CreateDraftResponse>("/drafts", { imageUrl });
-    return response.draftId;
+export async function createDraft(imageUrl: string): Promise<CreateDraftResponse> {
+    return apiPost<CreateDraftResponse>("/drafts", { imageUrl });
 }
 
 /**

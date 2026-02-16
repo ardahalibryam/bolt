@@ -35,8 +35,16 @@ export default function OnboardingScreen() {
     return null;
   }
 
-  const handleDotPress = (index: number) => {
-    setCurrentSlide(index);
+  const handleBack = () => {
+    if (currentSlide > 0) {
+      setCurrentSlide(currentSlide - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentSlide < onboardingData.length - 1) {
+      setCurrentSlide(currentSlide + 1);
+    }
   };
 
   const handleSkip = () => {
@@ -51,6 +59,7 @@ export default function OnboardingScreen() {
     router.push("/(auth)/sign-in");
   };
 
+  const isFirstSlide = currentSlide === 0;
   const isLastSlide = currentSlide === onboardingData.length - 1;
 
   return (
@@ -79,7 +88,32 @@ export default function OnboardingScreen() {
       )}
 
       <SafeAreaView style={styles.container}>
-        {/* Icon at Top (replaces logo) */}
+        {/* Top Bar: Back (left) + Skip (right) */}
+        <View style={styles.topBar}>
+          {/* Back button — hidden on first slide */}
+          {!isFirstSlide ? (
+            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+              <Image
+                source={require("../../assets/images/icons/onboarding/back-onboarding.png")}
+                style={styles.backIcon}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.backPlaceholder} />
+          )}
+
+          {/* Skip button — hidden on last slide */}
+          {!isLastSlide ? (
+            <TouchableOpacity onPress={handleSkip}>
+              <Text style={styles.skipText}>Пропусни</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.backPlaceholder} />
+          )}
+        </View>
+
+        {/* Icon at Top */}
         <View style={styles.logoContainer}>
           <Image
             source={onboardingData[currentSlide].icon}
@@ -102,21 +136,6 @@ export default function OnboardingScreen() {
 
         {/* Bottom Navigation */}
         <View style={styles.bottomContainer}>
-          {/* Dots */}
-          <View style={styles.dotsContainer}>
-            {onboardingData.map((_, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.dot,
-                  index === currentSlide ? styles.dotActive : styles.dotInactive,
-                ]}
-                onPress={() => handleDotPress(index)}
-              />
-            ))}
-          </View>
-
-          {/* Skip or Register/Login Buttons */}
           {isLastSlide ? (
             <View style={styles.buttonsContainer}>
               <TouchableOpacity style={styles.primaryButton} onPress={handleRegister}>
@@ -127,9 +146,11 @@ export default function OnboardingScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity onPress={handleSkip}>
-              <Text style={styles.skipText}>Пропусни</Text>
-            </TouchableOpacity>
+            <View style={styles.buttonsContainer}>
+              <TouchableOpacity style={styles.primaryButton} onPress={handleNext}>
+                <Text style={styles.primaryButtonText}>Продължи</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       </SafeAreaView>
@@ -158,8 +179,31 @@ const styles = StyleSheet.create({
     left: 0,
     width: "100%",
   },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  backButton: {
+    padding: 8,
+  },
+  backIcon: {
+    width: 24,
+    height: 24,
+  },
+  backPlaceholder: {
+    width: 40,
+    height: 40,
+  },
+  skipText: {
+    fontFamily: "Inter-SemiBold",
+    fontSize: 16,
+    color: Colors.textLight,
+  },
   logoContainer: {
-    paddingTop: 40,
+    paddingTop: 20,
     paddingHorizontal: 20,
     alignItems: "center",
   },
@@ -188,29 +232,6 @@ const styles = StyleSheet.create({
   bottomContainer: {
     paddingBottom: 60,
     alignItems: "center",
-  },
-  dotsContainer: {
-    flexDirection: "row",
-    gap: 16,
-    marginBottom: 20,
-  },
-  dot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    padding: 8, // Extra touch area
-  },
-  dotActive: {
-    backgroundColor: Colors.primary,
-  },
-  dotInactive: {
-    backgroundColor: Colors.inactive,
-  },
-  skipText: {
-    fontFamily: "Inter-SemiBold",
-    fontSize: 16,
-    color: Colors.primary,
-    textDecorationLine: "underline",
   },
   buttonsContainer: {
     width: "100%",

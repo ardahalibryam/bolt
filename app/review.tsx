@@ -154,6 +154,7 @@ const styles = StyleSheet.create({
     },
     publishButton: {
         backgroundColor: Colors.primary,
+        color: Colors.white,
         padding: 16,
         borderRadius: 8,
         alignItems: "center",

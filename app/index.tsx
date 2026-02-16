@@ -1,19 +1,35 @@
 import { Redirect } from "expo-router";
 import { useEffect, useState } from "react";
-import { getToken } from "../lib/auth";
+import { getPendingVerification, getToken } from "../lib/auth";
+
+type Destination = "/(tabs)" | "/(auth)/welcome" | "/(auth)/verify-email";
 
 export default function Index() {
   const [isReady, setIsReady] = useState(false);
-  const [hasToken, setHasToken] = useState(false);
+  const [destination, setDestination] = useState<Destination>("/(auth)/welcome");
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    getToken().then((token) => {
-      setHasToken(!!token);
+    (async () => {
+      const token = await getToken();
+      if (token) {
+        setDestination("/(tabs)");
+      } else {
+        const email = await getPendingVerification();
+        if (email) {
+          setPendingEmail(email);
+          setDestination("/(auth)/verify-email");
+        }
+      }
       setIsReady(true);
-    });
+    })();
   }, []);
 
   if (!isReady) return null;
 
-  return <Redirect href={hasToken ? "/(tabs)" : "/(auth)/welcome"} />;
+  if (destination === "/(auth)/verify-email" && pendingEmail) {
+    return <Redirect href={{ pathname: "/(auth)/verify-email", params: { email: pendingEmail } } as any} />;
+  }
+
+  return <Redirect href={destination} />;
 }

@@ -8,7 +8,7 @@ import { DraftPricing, generateDraftPricing, generateDraftText, getDraftPricing 
 import { Colors } from "./constants/Colors";
 
 export default function PriceScreen() {
-  const { draftId } = useLocalSearchParams();
+  const { draftId, productName } = useLocalSearchParams();
   const [pricing, setPricing] = useState<DraftPricing | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -117,6 +117,13 @@ export default function PriceScreen() {
     <SafeAreaView style={styles.container}>
 
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Product Name */}
+        {productName ? (
+          <Text style={styles.productName}>
+            {Array.isArray(productName) ? productName[0] : productName}
+          </Text>
+        ) : null}
+
         <Text style={styles.title}>Изберете цена</Text>
 
         {/* Option: Fast */}
@@ -191,6 +198,13 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     textAlign: "center",
     fontWeight: "bold",
+  },
+  productName: {
+    color: Colors.primary,
+    fontSize: 18,
+    textAlign: "center",
+    marginBottom: 8,
+    fontWeight: "600",
   },
   option: {
     flexDirection: "row",

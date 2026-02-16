@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import PasswordChecklist from "../../components/PasswordChecklist";
-import { register } from "../../lib/auth";
+import { register, setPendingVerification } from "../../lib/auth";
 import { isPasswordValid, validatePassword } from "../../lib/passwordValidation";
 import { Colors } from "../constants/Colors";
 
@@ -55,6 +55,9 @@ export default function SignUpScreen() {
     try {
       // Register now returns void (no token)
       await register(email.trim(), password);
+
+      // Persist verification state so screen survives app restart
+      await setPendingVerification(email.trim());
 
       // Redirect to verification screen
       router.replace({

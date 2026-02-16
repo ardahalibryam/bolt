@@ -1,6 +1,9 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "./api";
 import { apiDelete, apiGet, apiPost } from "./apiClient";
 import * as TokenService from "./token";
+
+const PENDING_VERIFICATION_KEY = "pending_verification_email";
 
 // Re-export token service for backward compatibility
 export const { storeToken, getToken, removeToken } = TokenService;
@@ -99,7 +102,7 @@ export async function register(email: string, password: string): Promise<void> {
 }
 
 /**
- * Verifies email with the token from the link.
+ * Verifies email with the 6-digit code from the email.
  * @returns The auth token (logs the user in).
  */
 export async function verifyEmail(token: string): Promise<string> {
@@ -107,7 +110,7 @@ export async function verifyEmail(token: string): Promise<string> {
         const data = await apiPost<VerifyEmailResponse>("/auth/verify-email", { token }, { skipAuth: true });
         return data.token;
     } catch (error: any) {
-        throw new Error(error.message || "Неуспешно потвърждение. Линкът може да е изтекъл.");
+        throw new Error(error.message || "Неуспешно потвърждение. Кодът може да е изтекъл.");
     }
 }
 
@@ -120,6 +123,30 @@ export async function resendVerification(email: string): Promise<void> {
     } catch (error: any) {
         throw new Error(error.message || "Неуспешно изпращане на имейл. Моля, опитайте по-късно.");
     }
+}
+
+// ── Pending Verification Persistence ──────────────────────────────
+
+/**
+ * Saves the email of a user who is mid-verification.
+ * Used by index.tsx to restore the verify screen after app restart.
+ */
+export async function setPendingVerification(email: string): Promise<void> {
+    await AsyncStorage.setItem(PENDING_VERIFICATION_KEY, email);
+}
+
+/**
+ * Returns the email awaiting verification, or null.
+ */
+export async function getPendingVerification(): Promise<string | null> {
+    return AsyncStorage.getItem(PENDING_VERIFICATION_KEY);
+}
+
+/**
+ * Clears the pending verification state (call after successful verify).
+ */
+export async function clearPendingVerification(): Promise<void> {
+    await AsyncStorage.removeItem(PENDING_VERIFICATION_KEY);
 }
 
 /**
