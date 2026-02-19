@@ -1,18 +1,51 @@
-import { router, useLocalSearchParams } from "expo-router";
+import * as Clipboard from "expo-clipboard";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+    ActivityIndicator,
+    Alert,
+    BackHandler,
+    Dimensions,
+    Image,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LoadingScreen } from "../../components/LoadingScreen";
-import { getListing, Listing } from "../../lib/listings";
+import { deleteListing, getListing, Listing } from "../../lib/listings";
 import { Colors } from "../constants/Colors";
 
 const { width } = Dimensions.get("window");
 
 export default function ListingDetailsScreen() {
     const { id, created } = useLocalSearchParams<{ id: string; created?: string }>();
+    const navigation = useNavigation();
     const [listing, setListing] = useState<Listing | null>(null);
     const [loading, setLoading] = useState(true);
+    const [deleting, setDeleting] = useState(false);
+    const [copiedField, setCopiedField] = useState<"title" | "description" | null>(null);
 
+    const isNewlyCreated = created === "true";
+
+    // ── Disable back navigation when just created ───────────────
+    useEffect(() => {
+        if (isNewlyCreated) {
+            navigation.setOptions({ gestureEnabled: false });
+        }
+    }, [isNewlyCreated, navigation]);
+
+    useEffect(() => {
+        if (!isNewlyCreated) return;
+
+        const handler = BackHandler.addEventListener("hardwareBackPress", () => true);
+        return () => handler.remove();
+    }, [isNewlyCreated]);
+
+    // ── Load listing data ───────────────────────────────────────
     useEffect(() => {
         if (id) {
             loadListing();
@@ -24,10 +57,54 @@ export default function ListingDetailsScreen() {
             const data = await getListing(id);
             setListing(data);
         } catch (error) {
-            Alert.alert("Error", "Failed to load listing details.");
+            Alert.alert("Грешка", "Неуспешно зареждане на обявата.");
             router.back();
         } finally {
             setLoading(false);
+        }
+    };
+
+    // ── Copy to clipboard ───────────────────────────────────────
+    const copyToClipboard = async (text: string, field: "title" | "description") => {
+        await Clipboard.setStringAsync(text);
+        setCopiedField(field);
+        setTimeout(() => setCopiedField(null), 2000);
+    };
+
+    // ── Delete listing ──────────────────────────────────────────
+    const confirmAndDelete = async () => {
+        const listingId = Array.isArray(id) ? id[0] : id;
+        if (!listingId) return;
+
+        setDeleting(true);
+        try {
+            await deleteListing(listingId);
+            router.replace("/(tabs)");
+        } catch (error) {
+            Alert.alert("Грешка", "Неуспешно изтриване. Моля, опитайте отново.");
+            setDeleting(false);
+        }
+    };
+
+    const handleDelete = () => {
+        if (Platform.OS === "web") {
+            const confirmed = window.confirm("Сигурни ли сте, че искате да изтриете тази обява?");
+            if (confirmed) {
+                confirmAndDelete();
+            }
+        } else {
+            Alert.alert(
+                "Изтриване на обява",
+                "Сигурни ли сте, че искате да изтриете тази обява?",
+                [
+                    { text: "Отказ", style: "cancel" },
+                    {
+                        text: "Изтрий",
+                        style: "destructive",
+                        onPress: confirmAndDelete,
+                    },
+                ]
+            );
         }
     };
 
@@ -40,17 +117,21 @@ export default function ListingDetailsScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => router.back()}
-                >
-                    <Image
-                        source={require("../../assets/images/icons/nav/arrow-back.png")}
-                        style={styles.backIcon}
-                        tintColor={Colors.textPrimary}
-                        resizeMode="contain"
-                    />
-                </TouchableOpacity>
+                {isNewlyCreated ? (
+                    <View style={{ width: 40 }} />
+                ) : (
+                    <TouchableOpacity
+                        style={styles.backButton}
+                        onPress={() => router.back()}
+                    >
+                        <Image
+                            source={require("../../assets/images/icons/nav/arrow-back.png")}
+                            style={styles.backIcon}
+                            tintColor={Colors.textPrimary}
+                            resizeMode="contain"
+                        />
+                    </TouchableOpacity>
+                )}
                 <Text style={styles.headerTitle} numberOfLines={1}>Детайли</Text>
                 <View style={{ width: 40 }} />
             </View>
@@ -63,7 +144,18 @@ export default function ListingDetailsScreen() {
                 />
 
                 <View style={styles.detailsContainer}>
-                    <Text style={styles.title}>{listing.title}</Text>
+                    {/* Title + Copy */}
+                    <View style={styles.fieldHeader}>
+                        <Text style={styles.title}>{listing.title}</Text>
+                        <TouchableOpacity
+                            onPress={() => copyToClipboard(listing.title, "title")}
+                            style={styles.copyButton}
+                        >
+                            <Text style={styles.copyButtonText}>
+                                {copiedField === "title" ? "✓ Копирано" : "Копирай"}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
 
                     <View style={styles.priceRow}>
                         <Text style={styles.price}>{listing.price} {listing.currency || "лв."}</Text>
@@ -74,7 +166,18 @@ export default function ListingDetailsScreen() {
 
                     <View style={styles.divider} />
 
-                    <Text style={styles.sectionTitle}>Описание</Text>
+                    {/* Description Header + Copy */}
+                    <View style={styles.fieldHeader}>
+                        <Text style={styles.sectionTitle}>Описание</Text>
+                        <TouchableOpacity
+                            onPress={() => copyToClipboard(listing.description, "description")}
+                            style={styles.copyButton}
+                        >
+                            <Text style={styles.copyButtonText}>
+                                {copiedField === "description" ? "✓ Копирано" : "Копирай"}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                     <Text style={styles.description}>{listing.description}</Text>
 
                     {listing.externalPlatformHint && (
@@ -83,7 +186,7 @@ export default function ListingDetailsScreen() {
                         </View>
                     )}
 
-                    {created === "true" && (
+                    {isNewlyCreated && (
                         <TouchableOpacity
                             style={styles.doneButton}
                             onPress={() => router.replace("/(tabs)")}
@@ -91,6 +194,19 @@ export default function ListingDetailsScreen() {
                             <Text style={styles.doneButtonText}>Завърши обява</Text>
                         </TouchableOpacity>
                     )}
+
+                    {/* Delete Button */}
+                    <TouchableOpacity
+                        style={[styles.deleteButton, deleting && styles.buttonDisabled]}
+                        onPress={handleDelete}
+                        disabled={deleting}
+                    >
+                        {deleting ? (
+                            <ActivityIndicator color={Colors.error} />
+                        ) : (
+                            <Text style={styles.deleteButtonText}>Изтрий обявата</Text>
+                        )}
+                    </TouchableOpacity>
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -101,10 +217,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: Colors.black,
-    },
-    center: {
-        justifyContent: "center",
-        alignItems: "center",
     },
     header: {
         flexDirection: "row",
@@ -144,11 +256,32 @@ const styles = StyleSheet.create({
     detailsContainer: {
         padding: 20,
     },
+    fieldHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+    },
     title: {
         color: Colors.white,
         fontSize: 24,
         fontWeight: "bold",
         marginBottom: 10,
+        flex: 1,
+        marginRight: 12,
+    },
+    copyButton: {
+        paddingVertical: 4,
+        paddingHorizontal: 10,
+        borderRadius: 6,
+        backgroundColor: Colors.surface,
+        borderWidth: 1,
+        borderColor: Colors.border,
+        marginTop: 2,
+    },
+    copyButtonText: {
+        color: Colors.primary,
+        fontSize: 13,
+        fontWeight: "600",
     },
     priceRow: {
         flexDirection: "row",
@@ -205,5 +338,21 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "bold",
     },
+    deleteButton: {
+        marginTop: 16,
+        padding: 16,
+        borderRadius: 8,
+        alignItems: "center",
+        width: "100%",
+        borderWidth: 1,
+        borderColor: Colors.error,
+    },
+    buttonDisabled: {
+        opacity: 0.5,
+    },
+    deleteButtonText: {
+        color: Colors.error,
+        fontSize: 16,
+        fontWeight: "bold",
+    },
 });
-

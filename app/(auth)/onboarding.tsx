@@ -1,9 +1,11 @@
 import { useFonts } from "expo-font";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../constants/Colors";
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const onboardingData = [
   {
@@ -90,7 +92,6 @@ export default function OnboardingScreen() {
       <SafeAreaView style={styles.container}>
         {/* Top Bar: Back (left) + Skip (right) */}
         <View style={styles.topBar}>
-          {/* Back button — hidden on first slide */}
           {!isFirstSlide ? (
             <TouchableOpacity onPress={handleBack} style={styles.backButton}>
               <Image
@@ -103,7 +104,6 @@ export default function OnboardingScreen() {
             <View style={styles.backPlaceholder} />
           )}
 
-          {/* Skip button — hidden on last slide */}
           {!isLastSlide ? (
             <TouchableOpacity onPress={handleSkip}>
               <Text style={styles.skipText}>Пропусни</Text>
@@ -113,28 +113,35 @@ export default function OnboardingScreen() {
           )}
         </View>
 
-        {/* Icon at Top */}
-        <View style={styles.logoContainer}>
-          <Image
-            source={onboardingData[currentSlide].icon}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
+        {/* Scrollable content — prevents clipping on short screens */}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          {/* Icon */}
+          <View style={styles.logoContainer}>
+            <Image
+              source={onboardingData[currentSlide].icon}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
 
-        {/* Main Content */}
-        <View style={styles.content}>
-          <Image
-            source={onboardingData[currentSlide].image}
-            style={styles.onboardingImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.text}>
-            {onboardingData[currentSlide].text}
-          </Text>
-        </View>
+          {/* Main Content */}
+          <View style={styles.content}>
+            <Image
+              source={onboardingData[currentSlide].image}
+              style={styles.onboardingImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.text}>
+              {onboardingData[currentSlide].text}
+            </Text>
+          </View>
+        </ScrollView>
 
-        {/* Bottom Navigation */}
+        {/* Bottom Navigation — always pinned */}
         <View style={styles.bottomContainer}>
           {isLastSlide ? (
             <View style={styles.buttonsContainer}>
@@ -184,7 +191,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: SCREEN_HEIGHT * 0.015,
   },
   backButton: {
     padding: 8,
@@ -202,14 +209,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textLight,
   },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
   logoContainer: {
-    paddingTop: 20,
+    paddingTop: SCREEN_HEIGHT * 0.01,
     paddingHorizontal: 20,
     alignItems: "center",
   },
   logo: {
-    marginTop: 20,
-    height: 80,
+    marginTop: SCREEN_HEIGHT * 0.01,
+    height: SCREEN_HEIGHT * 0.08,
   },
   content: {
     flex: 1,
@@ -218,19 +229,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   onboardingImage: {
-    width: 320,
-    marginBottom: 20,
+    width: SCREEN_WIDTH * 0.75,
+    marginBottom: SCREEN_HEIGHT * 0.02,
   },
   text: {
     fontFamily: "Montserrat-Regular",
-    fontSize: 30,
+    fontSize: Math.min(28, SCREEN_WIDTH * 0.07),
     color: Colors.textPrimary,
     textAlign: "center",
     paddingHorizontal: 20,
-    lineHeight: 36,
+    lineHeight: Math.min(34, SCREEN_WIDTH * 0.085),
   },
   bottomContainer: {
-    paddingBottom: 60,
+    paddingBottom: SCREEN_HEIGHT * 0.04,
     alignItems: "center",
   },
   buttonsContainer: {
