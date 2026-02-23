@@ -75,8 +75,17 @@ async function apiRequest<T>(
         try {
             errorData = await response.json();
             if (typeof errorData === "object" && errorData !== null) {
-                const data = errorData as { message?: string; error?: string };
-                errorMessage = data.message || data.error || errorMessage;
+                const data = errorData as {
+                    message?: string;
+                    error?: string | { message?: string };
+                };
+                if (typeof data.error === "object" && data.error?.message) {
+                    errorMessage = data.error.message;
+                } else if (typeof data.error === "string") {
+                    errorMessage = data.error;
+                } else if (data.message) {
+                    errorMessage = data.message;
+                }
             }
         } catch {
             // Use default error message if response parsing fails

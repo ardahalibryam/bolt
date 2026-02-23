@@ -9,6 +9,7 @@ export interface Listing {
     createdAt: string;
     currency?: string;
     externalPlatformHint?: string;
+    olxAdvertId?: string;
 }
 
 interface BackendListing {
@@ -20,6 +21,7 @@ interface BackendListing {
     createdAt: string;
     currency?: string;
     externalPlatformHint?: string;
+    olxAdvertId?: string;
 }
 
 interface ListingsResponse {
@@ -50,6 +52,7 @@ function mapBackendListing(item: BackendListing): Listing {
         imageUrl: item.imageUrl,
         createdAt: item.createdAt,
         currency: item.currency,
-        externalPlatformHint: item.externalPlatformHint
+        externalPlatformHint: item.externalPlatformHint,
+        olxAdvertId: item.olxAdvertId,
     };
 }

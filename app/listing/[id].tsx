@@ -1,25 +1,37 @@
 import * as Clipboard from "expo-clipboard";
-import { router, useLocalSearchParams, useNavigation } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
+import { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
     BackHandler,
     Dimensions,
     Image,
+    Modal,
     Platform,
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LoadingScreen } from "../../components/LoadingScreen";
 import { deleteListing, getListing, Listing } from "../../lib/listings";
+import {
+    getOlxAuthUrl,
+    getOlxPublishStatus,
+    getOlxStatus,
+    OlxPublishStatus,
+    publishToOlx,
+} from "../../lib/olx";
+import { setOlxConnectedCallback } from "../_layout";
 import { Colors } from "../constants/Colors";
 
 const { width } = Dimensions.get("window");
+const PHONE_REGEX = /^(\+359|0)\d{9}$/;
 
 export default function ListingDetailsScreen() {
     const { id, created } = useLocalSearchParams<{ id: string; created?: string }>();
@@ -28,6 +40,15 @@ export default function ListingDetailsScreen() {
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(false);
     const [copiedField, setCopiedField] = useState<"title" | "description" | null>(null);
+
+    // ── OLX state ───────────────────────────────────────────────
+    const [olxConnected, setOlxConnected] = useState(false);
+    const [olxConnecting, setOlxConnecting] = useState(false);
+    const [olxPublishing, setOlxPublishing] = useState(false);
+    const [olxPublishInfo, setOlxPublishInfo] = useState<OlxPublishStatus | null>(null);
+    const [showPhoneModal, setShowPhoneModal] = useState(false);
+    const [phone, setPhone] = useState("");
+    const [phoneError, setPhoneError] = useState("");
 
     const isNewlyCreated = created === "true";
 
@@ -63,6 +84,35 @@ export default function ListingDetailsScreen() {
             setLoading(false);
         }
     };
+
+    // ── Check OLX status on focus (re-checks after OAuth callback) ─
+    useFocusEffect(
+        useCallback(() => {
+            getOlxStatus()
+                .then((s) => setOlxConnected(s.connected))
+                .catch(() => { });
+        }, [])
+    );
+
+    // ── Check OLX publish status when listing loads ─────────────
+    useEffect(() => {
+        if (listing?.olxAdvertId) {
+            getOlxPublishStatus(listing.id)
+                .then((s) => setOlxPublishInfo(s))
+                .catch(() => { });
+        }
+    }, [listing]);
+
+    // ── Register callback for deep link OAuth completion ────────
+    const onOlxConnected = useCallback(() => {
+        setOlxConnected(true);
+        setOlxConnecting(false);
+    }, []);
+
+    useEffect(() => {
+        setOlxConnectedCallback(onOlxConnected);
+        return () => setOlxConnectedCallback(null);
+    }, [onOlxConnected]);
 
     // ── Copy to clipboard ───────────────────────────────────────
     const copyToClipboard = async (text: string, field: "title" | "description") => {
@@ -106,6 +156,118 @@ export default function ListingDetailsScreen() {
                 ]
             );
         }
+    };
+
+    // ── OLX OAuth flow ──────────────────────────────────────────
+    const handleConnectOlx = async () => {
+        setOlxConnecting(true);
+        try {
+            const { url } = await getOlxAuthUrl();
+            await WebBrowser.openAuthSessionAsync(url, "bolt://olx-callback");
+            // The deep link handler in _layout.tsx will call exchangeOlxCode
+            // and trigger onOlxCo
+
+        } catch (error) {
+            Alert.alert("Грешка", "Неуспешно свързване с OLX.");
+            setOlxConnecting(false);
+        }
+    };
+
+    // ── OLX Publish flow ────────────────────────────────────────
+    const handlePublishToOlx = async (phoneNumber?: string) => {
+        if (!listing) return;
+
+        setOlxPublishing(true);
+        setShowPhoneModal(false);
+        try {
+            const result = await publishToOlx(listing.id, phoneNumber);
+            setOlxPublishInfo({
+                published: true,
+                olxAdvertId: result.olxAdvertId,
+                olxStatus: "new",
+            });
+            Alert.alert("Успех!", "Обявата е изпратена към OLX.");
+        } catch (error: any) {
+            // If backend returns 400 with "phone required", show phone modal
+            if (error?.status === 400 && error?.message?.toLowerCase().includes("phone")) {
+                setOlxPublishing(false);
+                setShowPhoneModal(true);
+                return;
+            }
+            Alert.alert("Грешка", error?.message || "Неуспешно публикуване в OLX.");
+        } finally {
+            setOlxPublishing(false);
+        }
+    };
+
+    const handlePhoneSubmit = () => {
+        if (!PHONE_REGEX.test(phone)) {
+            setPhoneError("Въведете валиден телефонен номер (напр. 0888123456)");
+            return;
+        }
+        setPhoneError("");
+        handlePublishToOlx(phone);
+    };
+
+    // ── Render helpers ──────────────────────────────────────────
+
+    const renderOlxButton = () => {
+        // Already published — show status badge
+        if (olxPublishInfo?.published) {
+            const status = olxPublishInfo.olxStatus;
+            const statusConfig = {
+                new: { text: "✓ Изпратено към OLX", color: Colors.primary },
+                waiting: { text: "✓ В изчакване на модерация", color: Colors.primary },
+                active: { text: "✓ Активно в OLX", color: "#22c55e" },
+                rejected: { text: "✗ Отказано от OLX", color: Colors.error },
+            };
+            const config = statusConfig[status || "new"] || statusConfig["new"];
+
+            return (
+                <View style={[styles.olxStatusBadge, { borderColor: config.color }]}>
+                    <Text style={[styles.olxStatusText, { color: config.color }]}>
+                        {config.text}
+                    </Text>
+                </View>
+            );
+        }
+
+        // Currently publishing
+        if (olxPublishing) {
+            return (
+                <View style={[styles.olxButton, styles.olxButtonDisabled]}>
+                    <ActivityIndicator color={Colors.white} size="small" />
+                    <Text style={styles.olxButtonText}>Публикуване...</Text>
+                </View>
+            );
+        }
+
+        // Not connected — show connect button
+        if (!olxConnected) {
+            return (
+                <TouchableOpacity
+                    style={styles.olxConnectButton}
+                    onPress={handleConnectOlx}
+                    disabled={olxConnecting}
+                >
+                    {olxConnecting ? (
+                        <ActivityIndicator color={Colors.primary} size="small" />
+                    ) : (
+                        <Text style={styles.olxConnectButtonText}>Свържи OLX акаунт</Text>
+                    )}
+                </TouchableOpacity>
+            );
+        }
+
+        // Connected — show publish button
+        return (
+            <TouchableOpacity
+                style={styles.olxButton}
+                onPress={() => handlePublishToOlx()}
+            >
+                <Text style={styles.olxButtonText}>Публикувай в OLX</Text>
+            </TouchableOpacity>
+        );
     };
 
     if (loading) {
@@ -186,6 +348,10 @@ export default function ListingDetailsScreen() {
                         </View>
                     )}
 
+                    {/* OLX Publish Section */}
+                    <View style={styles.divider} />
+                    {renderOlxButton()}
+
                     {isNewlyCreated && (
                         <TouchableOpacity
                             style={styles.doneButton}
@@ -209,6 +375,57 @@ export default function ListingDetailsScreen() {
                     </TouchableOpacity>
                 </View>
             </ScrollView>
+
+            {/* Phone Number Modal */}
+            <Modal
+                visible={showPhoneModal}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowPhoneModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Телефонен номер</Text>
+                        <Text style={styles.modalSubtitle}>
+                            OLX изисква телефонен номер за публикуване на обяви.
+                        </Text>
+
+                        <TextInput
+                            style={[styles.phoneInput, phoneError ? styles.phoneInputError : null]}
+                            placeholder="0888123456"
+                            placeholderTextColor={Colors.textSecondary}
+                            keyboardType="phone-pad"
+                            value={phone}
+                            onChangeText={(text) => {
+                                setPhone(text);
+                                setPhoneError("");
+                            }}
+                            autoFocus
+                        />
+                        {phoneError ? (
+                            <Text style={styles.phoneErrorText}>{phoneError}</Text>
+                        ) : null}
+
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity
+                                style={styles.modalCancelButton}
+                                onPress={() => {
+                                    setShowPhoneModal(false);
+                                    setPhoneError("");
+                                }}
+                            >
+                                <Text style={styles.modalCancelText}>Отказ</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.modalSubmitButton}
+                                onPress={handlePhoneSubmit}
+                            >
+                                <Text style={styles.modalSubmitText}>Публикувай</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -325,8 +542,126 @@ const styles = StyleSheet.create({
         color: Colors.textSecondary,
         fontSize: 14,
     },
+    // ── OLX Styles ──────────────────────────────────────────────
+    olxButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: Colors.primary,
+        padding: 16,
+        borderRadius: 8,
+        width: "100%",
+        gap: 8,
+    },
+    olxButtonText: {
+        color: Colors.white,
+        fontSize: 16,
+        fontWeight: "bold",
+    },
+    olxButtonDisabled: {
+        opacity: 0.7,
+    },
+    olxConnectButton: {
+        padding: 16,
+        borderRadius: 8,
+        alignItems: "center",
+        width: "100%",
+        borderWidth: 2,
+        borderColor: Colors.primary,
+    },
+    olxConnectButtonText: {
+        color: Colors.primary,
+        fontSize: 16,
+        fontWeight: "bold",
+    },
+    olxStatusBadge: {
+        padding: 16,
+        borderRadius: 8,
+        alignItems: "center",
+        width: "100%",
+        borderWidth: 1,
+    },
+    olxStatusText: {
+        fontSize: 15,
+        fontWeight: "600",
+    },
+    // ── Phone Modal Styles ──────────────────────────────────────
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.7)",
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: 24,
+    },
+    modalContent: {
+        backgroundColor: Colors.surface,
+        borderRadius: 16,
+        padding: 24,
+        width: "100%",
+        maxWidth: 400,
+    },
+    modalTitle: {
+        color: Colors.white,
+        fontSize: 20,
+        fontWeight: "bold",
+        marginBottom: 8,
+    },
+    modalSubtitle: {
+        color: Colors.textSecondary,
+        fontSize: 14,
+        lineHeight: 20,
+        marginBottom: 20,
+    },
+    phoneInput: {
+        backgroundColor: Colors.black,
+        borderWidth: 1,
+        borderColor: Colors.border,
+        borderRadius: 8,
+        padding: 14,
+        fontSize: 16,
+        color: Colors.white,
+    },
+    phoneInputError: {
+        borderColor: Colors.error,
+    },
+    phoneErrorText: {
+        color: Colors.error,
+        fontSize: 13,
+        marginTop: 6,
+    },
+    modalButtons: {
+        flexDirection: "row",
+        marginTop: 20,
+        gap: 12,
+    },
+    modalCancelButton: {
+        flex: 1,
+        padding: 14,
+        borderRadius: 8,
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: Colors.border,
+    },
+    modalCancelText: {
+        color: Colors.textSecondary,
+        fontSize: 15,
+        fontWeight: "600",
+    },
+    modalSubmitButton: {
+        flex: 1,
+        padding: 14,
+        borderRadius: 8,
+        alignItems: "center",
+        backgroundColor: Colors.primary,
+    },
+    modalSubmitText: {
+        color: Colors.white,
+        fontSize: 15,
+        fontWeight: "600",
+    },
+    // ── Existing Styles ─────────────────────────────────────────
     doneButton: {
-        marginTop: 40,
+        marginTop: 16,
         backgroundColor: Colors.primary,
         padding: 16,
         borderRadius: 8,

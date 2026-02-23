@@ -1,7 +1,9 @@
 import { useFonts } from "expo-font";
-import { router } from "expo-router";
-import { Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
+import { ActivityIndicator, Alert, Image, Linking, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { removeToken } from "../../lib/auth";
+import { disconnectOlx, getOlxStatus } from "../../lib/olx";
 import { rateApp } from "../../lib/rateApp";
 import { Colors } from "../constants/Colors";
 
@@ -10,6 +12,18 @@ export default function ProfileScreen() {
     "Montserrat-Medium": require("@expo-google-fonts/montserrat/Montserrat_500Medium.ttf"),
   });
 
+  const [olxConnected, setOlxConnected] = useState(false);
+  const [olxDisconnecting, setOlxDisconnecting] = useState(false);
+
+  // Check OLX status whenever profile screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      getOlxStatus()
+        .then((s) => setOlxConnected(s.connected))
+        .catch(() => { });
+    }, [])
+  );
+
   if (!fontsLoaded) {
     return null;
   }
@@ -17,6 +31,34 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     await removeToken();
     router.replace("/(auth)/sign-in");
+  };
+
+  const handleDisconnectOlx = () => {
+    const doDisconnect = async () => {
+      setOlxDisconnecting(true);
+      try {
+        await disconnectOlx();
+        setOlxConnected(false);
+      } catch (error: any) {
+        Alert.alert("Грешка", error?.message || "Неуспешно прекъсване на връзката.");
+      } finally {
+        setOlxDisconnecting(false);
+      }
+    };
+
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm("Прекъсване на връзката с OLX?");
+      if (confirmed) doDisconnect();
+    } else {
+      Alert.alert(
+        "OLX",
+        "Сигурни ли сте, че искате да прекъснете връзката с OLX?",
+        [
+          { text: "Отказ", style: "cancel" },
+          { text: "Прекъсни", style: "destructive", onPress: doDisconnect },
+        ]
+      );
+    }
   };
 
   return (
@@ -64,6 +106,28 @@ export default function ProfileScreen() {
               <Image source={require("../../assets/images/icons/profile/arrow.png")} style={styles.profileItemImage} resizeMode="contain" />
             </TouchableOpacity>
           </View>
+
+          {/* OLX Connection Section */}
+          <View style={styles.profileContainer}>
+            <View style={[styles.profileItem, styles.profileItemLast]}>
+              <View style={styles.profileItemContent}>
+                <View style={[styles.olxDot, olxConnected && styles.olxDotConnected]} />
+                <Text style={styles.profileItemText}>
+                  {olxConnected ? "Свързан с OLX" : "OLX не е свързан"}
+                </Text>
+              </View>
+              {olxConnected && (
+                <TouchableOpacity onPress={handleDisconnectOlx} disabled={olxDisconnecting}>
+                  {olxDisconnecting ? (
+                    <ActivityIndicator size="small" color={Colors.error} />
+                  ) : (
+                    <Text style={styles.olxDisconnectText}>Прекъсни</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
           <View style={styles.profileContainer}>
             <TouchableOpacity style={[styles.profileItem, styles.profileItemLast]} onPress={handleLogout}>
               <View style={styles.profileItemContent}>
@@ -152,6 +216,21 @@ const styles = StyleSheet.create({
   },
   profileItemLast: {
     borderBottomWidth: 0,
+  },
+  // ── OLX Styles ──────────────────────────────────────────────
+  olxDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.textSecondary,
+  },
+  olxDotConnected: {
+    backgroundColor: "#22c55e",
+  },
+  olxDisconnectText: {
+    color: Colors.error,
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
 
