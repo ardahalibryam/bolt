@@ -6,6 +6,7 @@ import { ActivityIndicator, Alert, Dimensions, Image, StyleSheet, Text, Touchabl
 import { SafeAreaView } from "react-native-safe-area-context";
 import { uploadImage } from "../lib/cloudinary";
 import { createDraft } from "../lib/drafts";
+import { compressImage } from "../lib/imageCompression";
 import { Colors } from "./constants/Colors";
 
 const { width, height } = Dimensions.get("window");
@@ -42,8 +43,12 @@ export default function CameraScreen() {
     try {
       setIsCreatingDraft(true);
 
-      console.log("Uploading image to Cloudinary...");
-      const imageUrl = await uploadImage(uri);
+      console.log("Compressing image...");
+      const compressedUri = await compressImage(uri);
+      console.log("Image compressed successfully");
+
+      console.log("Uploading compressed image to Cloudinary...");
+      const imageUrl = await uploadImage(compressedUri);
       console.log("Image uploaded successfully:", imageUrl);
 
       console.log("Creating draft with URL...");

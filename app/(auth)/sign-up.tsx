@@ -54,7 +54,7 @@ export default function SignUpScreen() {
 
     try {
       // Register now returns void (no token)
-      await register(email.trim(), password);
+      await register(email.trim(), password, name.trim());
 
       // Persist verification state so screen survives app restart
       await setPendingVerification(email.trim());

@@ -47,7 +47,7 @@ export default function HomeScreen() {
   };
 
   const openTipsUrl = () => {
-    Linking.openURL("https://boltbg.info");
+    Linking.openURL("https://boltbg.info/#/course");
   };
 
   if (!fontsLoaded) {

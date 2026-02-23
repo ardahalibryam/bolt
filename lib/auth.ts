@@ -82,9 +82,9 @@ export async function login(email: string, password: string): Promise<string> {
  * Registers a new user. 
  * NOTE: Does NOT log the user in. They must verify email first.
  */
-export async function register(email: string, password: string): Promise<void> {
+export async function register(email: string, password: string, name: string): Promise<void> {
     try {
-        await apiPost<RegisterResponse>("/auth/register", { email, password }, { skipAuth: true });
+        await apiPost<RegisterResponse>("/auth/register", { email, password, name }, { skipAuth: true });
     } catch (error: any) {
         let errorMessage = "Възникна грешка при регистрация. Моля, опитайте отново.";
 
