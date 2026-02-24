@@ -61,8 +61,9 @@ async function apiRequest<T>(
         body: body ? JSON.stringify(body) : undefined,
     });
 
-    // Handle 401 Unauthorized
-    if (response.status === 401 && !skipAuth) {
+    // Handle 401 Unauthorized — but NOT for /olx/* endpoints
+    // OLX 401s mean the OLX token expired, not the user's app session
+    if (response.status === 401 && !skipAuth && !endpoint.startsWith("/olx")) {
         await handleUnauthorized();
         throw new ApiError("Сесията ви е изтекла. Моля, влезте отново.", 401);
     }

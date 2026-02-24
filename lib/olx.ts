@@ -16,7 +16,13 @@ export interface OlxPublishResult {
 export interface OlxPublishStatus {
     published: boolean;
     olxAdvertId?: string;
-    olxStatus?: "new" | "waiting" | "active" | "rejected";
+    olxStatus?: "new" | "waiting" | "active" | "rejected" | "removed" | "olx_disconnected";
+}
+
+export interface OlxCity {
+    id: number;
+    name: string;
+    municipality: string;
 }
 
 // ── API Functions ────────────────────────────────────────────────
@@ -36,14 +42,24 @@ export async function exchangeOlxCode(code: string): Promise<void> {
     await apiPost("/olx/token", { code });
 }
 
+/** Fetch all Bulgarian cities from OLX */
+export async function getOlxCities(): Promise<OlxCity[]> {
+    const data = await apiGet<{ cities: OlxCity[] }>("/olx/cities");
+    return data.cities;
+}
+
 /** Publish a listing to OLX */
 export async function publishToOlx(
     listingId: string,
-    phone?: string
+    phone?: string,
+    cityId?: number
 ): Promise<OlxPublishResult> {
+    const body: Record<string, any> = {};
+    if (phone) body.phone = phone;
+    if (cityId) body.cityId = cityId;
     return apiPost<OlxPublishResult>(
         `/olx/publish/${listingId}`,
-        phone ? { phone } : undefined
+        Object.keys(body).length > 0 ? body : undefined
     );
 }
 

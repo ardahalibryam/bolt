@@ -1,8 +1,12 @@
 import { useFonts } from "expo-font";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -11,20 +15,34 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import PasswordChecklist from "../../components/PasswordChecklist";
-import { resetPassword } from "../../lib/auth";
+import { forgotPassword, resetPassword } from "../../lib/auth";
 import { isPasswordValid, validatePassword } from "../../lib/passwordValidation";
 import { Colors } from "../constants/Colors";
 
-export default function ResetPasswordScreen() {
-    const { token } = useLocalSearchParams<{ token?: string }>();
+const CODE_LENGTH = 6;
+const RESEND_COOLDOWN_SECONDS = 60;
 
+export default function ResetPasswordScreen() {
+    const { email } = useLocalSearchParams<{ email?: string }>();
+
+    // Code input state
+    const [digits, setDigits] = useState<string[]>(Array(CODE_LENGTH).fill(""));
+    const inputRefs = useRef<(TextInput | null)[]>([]);
+
+    // Password state
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+
+    // Form state
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [validationError, setValidationError] = useState<string | null>(null);
+
+    // Resend state
+    const [resending, setResending] = useState(false);
+    const [cooldown, setCooldown] = useState(0);
 
     const [fontsLoaded] = useFonts({
         "Montserrat-Regular": require("@expo-google-fonts/montserrat/Montserrat_400Regular.ttf"),
@@ -33,32 +51,75 @@ export default function ResetPasswordScreen() {
         "Inter-SemiBold": require("@expo-google-fonts/inter/Inter_500Medium.ttf"),
     });
 
+    // Cooldown timer
+    useEffect(() => {
+        if (cooldown <= 0) return;
+        const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+        return () => clearTimeout(timer);
+    }, [cooldown]);
+
     if (!fontsLoaded) {
         return null;
     }
 
-    // Missing token error state
-    if (!token) {
-        return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.content}>
-                    <Text style={styles.title}>Грешка</Text>
-                    <Text style={styles.errorDescription}>
-                        Невалиден линк за възстановяване.
-                    </Text>
-                    <TouchableOpacity
-                        style={styles.primaryButton}
-                        onPress={() => router.replace("/(auth)/forgot-password")}
-                    >
-                        <Text style={styles.primaryButtonText}>Заяви нов линк</Text>
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
-        );
-    }
+    // ── Code input handlers ─────────────────────────────────────
+
+    const handleDigitChange = (text: string, index: number) => {
+        const cleanText = text.replace(/[^0-9]/g, "");
+
+        if (cleanText.length > 1) {
+            const newDigits = [...digits];
+            for (let i = 0; i < cleanText.length; i++) {
+                if (index + i < CODE_LENGTH) {
+                    newDigits[index + i] = cleanText[i];
+                }
+            }
+            setDigits(newDigits);
+
+            if (error) {
+                setError(null);
+            }
+
+            const nextFocusIndex = Math.min(index + cleanText.length, CODE_LENGTH - 1);
+            inputRefs.current[nextFocusIndex]?.focus();
+            return;
+        }
+
+        const digit = cleanText.slice(-1);
+        const newDigits = [...digits];
+        newDigits[index] = digit;
+        setDigits(newDigits);
+
+        // Clear previous errors when user starts typing again
+        if (error) {
+            setError(null);
+        }
+
+        if (digit && index < CODE_LENGTH - 1) {
+            inputRefs.current[index + 1]?.focus();
+        }
+    };
+
+    const handleKeyPress = (key: string, index: number) => {
+        if (key === "Backspace" && !digits[index] && index > 0) {
+            const newDigits = [...digits];
+            newDigits[index - 1] = "";
+            setDigits(newDigits);
+            inputRefs.current[index - 1]?.focus();
+        }
+    };
+
+    // ── Form validation & submit ────────────────────────────────
+
+    const isCodeComplete = digits.every((d) => d !== "");
 
     const validateForm = (): boolean => {
         setValidationError(null);
+
+        if (!isCodeComplete) {
+            setValidationError("Моля, въведете 6-цифрения код.");
+            return false;
+        }
 
         if (!isPasswordValid(validatePassword(newPassword))) {
             setValidationError("Паролата не отговаря на изискванията за сигурност.");
@@ -75,20 +136,48 @@ export default function ResetPasswordScreen() {
 
     const handleSubmit = async () => {
         if (isLoading) return;
-
         if (!validateForm()) return;
 
         setError(null);
         setIsLoading(true);
+        Keyboard.dismiss();
 
         try {
-            await resetPassword(token, newPassword);
+            const code = digits.join("");
+            await resetPassword(code, newPassword);
             setIsSuccess(true);
-        } catch (err) {
-            const message = err instanceof Error ? err.message : "Възникна грешка. Моля, опитайте отново.";
-            setError(message);
+        } catch (err: any) {
+            const status = err?.status;
+            if (status === 400) {
+                setError("Невалиден или изтекъл код.");
+            } else {
+                const message = err instanceof Error ? err.message : "Възникна грешка. Моля, опитайте отново.";
+                setError(message);
+            }
+            // Clear code inputs so user can try again
+            setDigits(Array(CODE_LENGTH).fill(""));
+            setTimeout(() => inputRefs.current[0]?.focus(), 100);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    // ── Resend handler ──────────────────────────────────────────
+
+    const handleResend = async () => {
+        if (!email || resending || cooldown > 0) return;
+
+        setResending(true);
+        try {
+            await forgotPassword(email);
+            setCooldown(RESEND_COOLDOWN_SECONDS);
+            setError(null);
+            setDigits(Array(CODE_LENGTH).fill(""));
+            setTimeout(() => inputRefs.current[0]?.focus(), 100);
+        } catch {
+            // Ignore errors
+        } finally {
+            setResending(false);
         }
     };
 
@@ -96,16 +185,16 @@ export default function ResetPasswordScreen() {
         router.replace("/(auth)/sign-in");
     };
 
-    const handleRequestNewLink = () => {
-        router.replace("/(auth)/forgot-password");
-    };
+    // ── Success state ───────────────────────────────────────────
 
-    // Success state
     if (isSuccess) {
         return (
             <SafeAreaView style={styles.container}>
-                <View style={styles.content}>
-                    <Text style={styles.title}>Готово</Text>
+                <View style={styles.centeredContent}>
+                    <View style={styles.iconContainer}>
+                        <Text style={styles.icon}>✅</Text>
+                    </View>
+                    <Text style={styles.title}>Готово!</Text>
                     <Text style={styles.description}>
                         Паролата е успешно сменена.
                     </Text>
@@ -117,91 +206,151 @@ export default function ResetPasswordScreen() {
         );
     }
 
-    // Check if error is token-related (terminal state)
-    const isTokenError = error?.includes("невалиден") || error?.includes("изтекъл");
+    // ── Main form ───────────────────────────────────────────────
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.content}>
-                <Text style={styles.title}>Нова парола</Text>
-                <Text style={styles.description}>
-                    Въведи нова парола за акаунта си.
-                </Text>
-
-                <View style={styles.inputContainer}>
-                    <View style={styles.passwordContainer}>
-                        <TextInput
-                            style={styles.passwordInput}
-                            placeholder="Нова парола"
-                            placeholderTextColor="#4D4D4D"
-                            value={newPassword}
-                            onChangeText={(text) => {
-                                setNewPassword(text);
-                                setValidationError(null);
-                            }}
-                            secureTextEntry={!showPassword}
-                        />
-                        <TouchableOpacity
-                            onPress={() => setShowPassword(!showPassword)}
-                            style={styles.showButton}
-                        >
-                            <Text style={styles.showText}>{showPassword ? "Скрий" : "Покажи"}</Text>
-                        </TouchableOpacity>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+            >
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* Header */}
+                    <View style={styles.iconContainer}>
+                        <Text style={styles.icon}>🔒</Text>
                     </View>
 
-                    <PasswordChecklist password={newPassword} />
+                    <Text style={styles.titleCentered}>Въведи код</Text>
+                    <Text style={styles.descriptionCentered}>
+                        {email
+                            ? `Изпратихме 6-цифрен код на ${email}`
+                            : "Изпратихме 6-цифрен код на твоя имейл"}
+                    </Text>
 
-                    <View style={styles.passwordContainer}>
-                        <TextInput
-                            style={styles.passwordInput}
-                            placeholder="Потвърди парола"
-                            placeholderTextColor="#4D4D4D"
-                            value={confirmPassword}
-                            onChangeText={(text) => {
-                                setConfirmPassword(text);
-                                setValidationError(null);
-                            }}
-                            secureTextEntry={!showPassword}
-                        />
+                    {/* 6-digit Code Input Row */}
+                    <View style={styles.codeRow}>
+                        {digits.map((digit, index) => (
+                            <TextInput
+                                key={index}
+                                ref={(ref) => { inputRefs.current[index] = ref; }}
+                                style={[
+                                    styles.codeBox,
+                                    digit ? styles.codeBoxFilled : null,
+                                    error ? styles.codeBoxError : null,
+                                ]}
+                                value={digit}
+                                onChangeText={(text) => handleDigitChange(text, index)}
+                                onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
+                                keyboardType="number-pad"
+                                maxLength={CODE_LENGTH}
+                                textContentType="oneTimeCode"
+                                autoFocus={index === 0}
+                                selectTextOnFocus
+                            />
+                        ))}
                     </View>
-                </View>
 
-                {/* Validation Error */}
-                {validationError && (
-                    <View style={styles.errorContainer}>
-                        <Text style={styles.errorText}>{validationError}</Text>
+                    <Text style={styles.expiryHint}>Кодът изтича след 20 минути</Text>
+
+                    {/* Password Inputs */}
+                    <View style={styles.inputContainer}>
+                        <View style={styles.passwordContainer}>
+                            <TextInput
+                                style={styles.passwordInput}
+                                placeholder="Нова парола"
+                                placeholderTextColor="#4D4D4D"
+                                value={newPassword}
+                                onChangeText={(text) => {
+                                    setNewPassword(text);
+                                    setValidationError(null);
+                                }}
+                                secureTextEntry={!showPassword}
+                            />
+                            <TouchableOpacity
+                                onPress={() => setShowPassword(!showPassword)}
+                                style={styles.showButton}
+                            >
+                                <Text style={styles.showText}>{showPassword ? "Скрий" : "Покажи"}</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <PasswordChecklist password={newPassword} />
+
+                        <View style={styles.passwordContainer}>
+                            <TextInput
+                                style={styles.passwordInput}
+                                placeholder="Потвърди парола"
+                                placeholderTextColor="#4D4D4D"
+                                value={confirmPassword}
+                                onChangeText={(text) => {
+                                    setConfirmPassword(text);
+                                    setValidationError(null);
+                                }}
+                                secureTextEntry={!showPassword}
+                            />
+                        </View>
                     </View>
-                )}
 
-                {/* API Error */}
-                {error && (
-                    <View style={styles.errorContainer}>
-                        <Text style={styles.errorText}>{error}</Text>
-                    </View>
-                )}
+                    {/* Validation Error */}
+                    {validationError && (
+                        <View style={styles.errorContainer}>
+                            <Text style={styles.errorText}>{validationError}</Text>
+                        </View>
+                    )}
 
-                {isTokenError ? (
-                    <TouchableOpacity style={styles.primaryButton} onPress={handleRequestNewLink}>
-                        <Text style={styles.primaryButtonText}>Заяви нов линк</Text>
-                    </TouchableOpacity>
-                ) : (
+                    {/* API Error */}
+                    {error && (
+                        <View style={styles.errorContainer}>
+                            <Text style={styles.errorText}>{error}</Text>
+                        </View>
+                    )}
+
+                    {/* Submit Button */}
                     <TouchableOpacity
-                        style={[styles.primaryButton, isLoading && styles.primaryButtonDisabled]}
+                        style={[
+                            styles.primaryButton,
+                            (!isCodeComplete || isLoading) && styles.primaryButtonDisabled,
+                        ]}
                         onPress={handleSubmit}
-                        disabled={isLoading}
+                        disabled={!isCodeComplete || isLoading}
                     >
                         {isLoading ? (
                             <ActivityIndicator color="#FFFFFF" />
                         ) : (
-                            <Text style={styles.primaryButtonText}>Запази паролата</Text>
+                            <Text style={styles.primaryButtonText}>Нулиране на парола</Text>
                         )}
                     </TouchableOpacity>
-                )}
 
-                <TouchableOpacity style={styles.backLink} onPress={handleBackToLogin}>
-                    <Text style={styles.backLinkText}>Назад към вход</Text>
-                </TouchableOpacity>
-            </View>
+                    {/* Resend Button */}
+                    <TouchableOpacity
+                        style={[
+                            styles.outlineButton,
+                            (cooldown > 0 || resending || !email) && styles.primaryButtonDisabled,
+                        ]}
+                        onPress={handleResend}
+                        disabled={cooldown > 0 || resending || !email}
+                    >
+                        {resending ? (
+                            <ActivityIndicator color={Colors.primary} />
+                        ) : (
+                            <Text style={styles.outlineButtonText}>
+                                {cooldown > 0
+                                    ? `Изпрати отново (${cooldown}с)`
+                                    : "Изпрати отново"}
+                            </Text>
+                        )}
+                    </TouchableOpacity>
+
+                    {/* Back to login */}
+                    <TouchableOpacity style={styles.backLink} onPress={handleBackToLogin}>
+                        <Text style={styles.backLinkText}>Назад към вход</Text>
+                    </TouchableOpacity>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }
@@ -211,33 +360,95 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: Colors.background,
     },
-    content: {
-        flex: 1,
-        paddingHorizontal: 20,
+    scrollContent: {
+        flexGrow: 1,
+        padding: 24,
+        alignItems: "center",
         justifyContent: "center",
+    },
+    centeredContent: {
+        flex: 1,
+        padding: 24,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    iconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: "#E6F4FE",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 24,
+    },
+    icon: {
+        fontSize: 40,
     },
     title: {
         fontFamily: "Montserrat-Regular",
-        fontSize: 30,
+        fontSize: 24,
         color: Colors.textPrimary,
-        marginBottom: 16,
+        marginBottom: 12,
+    },
+    titleCentered: {
+        fontFamily: "Montserrat-Regular",
+        fontSize: 24,
+        color: Colors.textPrimary,
+        marginBottom: 12,
+        textAlign: "center",
     },
     description: {
         fontFamily: "Inter-Regular",
-        fontSize: 16,
+        fontSize: 15,
         color: Colors.textSecondary,
         marginBottom: 32,
-        lineHeight: 24,
+        lineHeight: 22,
     },
-    errorDescription: {
+    descriptionCentered: {
         fontFamily: "Inter-Regular",
-        fontSize: 16,
-        color: Colors.error,
+        fontSize: 15,
+        color: Colors.textSecondary,
+        textAlign: "center",
         marginBottom: 32,
-        lineHeight: 24,
+        lineHeight: 22,
+        paddingHorizontal: 16,
     },
+    // ── Code Input ──────────────────────────────────────────────
+    codeRow: {
+        flexDirection: "row",
+        justifyContent: "center",
+        gap: 10,
+        marginBottom: 12,
+    },
+    codeBox: {
+        width: 48,
+        height: 56,
+        borderRadius: 10,
+        borderWidth: 1.5,
+        borderColor: Colors.border,
+        backgroundColor: Colors.surface,
+        textAlign: "center",
+        fontSize: 24,
+        fontWeight: "600",
+        color: Colors.textPrimary,
+    },
+    codeBoxFilled: {
+        borderColor: Colors.primary,
+    },
+    codeBoxError: {
+        borderColor: Colors.error,
+    },
+    expiryHint: {
+        fontFamily: "Inter-Regular",
+        fontSize: 13,
+        color: Colors.textSecondary,
+        marginBottom: 28,
+        textAlign: "center",
+    },
+    // ── Password Inputs ─────────────────────────────────────────
     inputContainer: {
-        marginBottom: 24,
+        width: "100%",
+        marginBottom: 16,
         gap: 16,
     },
     passwordContainer: {
@@ -265,6 +476,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: Colors.primary,
     },
+    // ── Errors ───────────────────────────────────────────────────
     errorContainer: {
         marginBottom: 16,
         padding: 12,
@@ -272,6 +484,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         borderWidth: 1,
         borderColor: "rgba(255, 69, 58, 0.3)",
+        width: "100%",
     },
     errorText: {
         fontFamily: "Inter-Medium",
@@ -279,22 +492,40 @@ const styles = StyleSheet.create({
         color: Colors.error,
         textAlign: "center",
     },
+    // ── Buttons ──────────────────────────────────────────────────
     primaryButton: {
         backgroundColor: Colors.primary,
         borderRadius: 12,
         paddingVertical: 16,
         alignItems: "center",
-        marginBottom: 16,
+        width: "100%",
+        marginBottom: 12,
     },
     primaryButtonDisabled: {
-        opacity: 0.6,
+        opacity: 0.5,
     },
     primaryButtonText: {
         fontFamily: "Inter-SemiBold",
         fontSize: 16,
         color: "#FFFFFF",
     },
+    outlineButton: {
+        backgroundColor: "transparent",
+        borderRadius: 12,
+        paddingVertical: 14,
+        alignItems: "center",
+        width: "100%",
+        borderWidth: 1,
+        borderColor: Colors.border,
+        marginBottom: 12,
+    },
+    outlineButtonText: {
+        fontFamily: "Inter-Medium",
+        fontSize: 16,
+        color: Colors.textPrimary,
+    },
     backLink: {
+        padding: 12,
         alignItems: "center",
     },
     backLinkText: {

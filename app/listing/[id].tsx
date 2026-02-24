@@ -7,6 +7,7 @@ import {
     Alert,
     BackHandler,
     Dimensions,
+    FlatList,
     Image,
     Modal,
     Platform,
@@ -22,8 +23,10 @@ import { LoadingScreen } from "../../components/LoadingScreen";
 import { deleteListing, getListing, Listing } from "../../lib/listings";
 import {
     getOlxAuthUrl,
+    getOlxCities,
     getOlxPublishStatus,
     getOlxStatus,
+    OlxCity,
     OlxPublishStatus,
     publishToOlx,
 } from "../../lib/olx";
@@ -49,6 +52,40 @@ export default function ListingDetailsScreen() {
     const [showPhoneModal, setShowPhoneModal] = useState(false);
     const [phone, setPhone] = useState("");
     const [phoneError, setPhoneError] = useState("");
+
+    // ── City picker state ───────────────────────────────────────
+    const [showCityModal, setShowCityModal] = useState(false);
+    const [cities, setCities] = useState<OlxCity[]>([]);
+    const [citySearch, setCitySearch] = useState("");
+    const [selectedCity, setSelectedCity] = useState<OlxCity | null>(null);
+    const [citiesLoading, setCitiesLoading] = useState(false);
+
+    const TOP_5_CITIES = ["София", "Пловдив", "Варна", "Бургас", "Русе"];
+
+    const filteredCities = citySearch.trim()
+        ? cities
+            .filter((c) => {
+                const q = citySearch.toLowerCase();
+                return c.name.toLowerCase().includes(q)
+                    || c.municipality.toLowerCase().includes(q);
+            })
+            .slice(0, 20)
+        : cities
+            .filter((c) => TOP_5_CITIES.includes(c.name))
+            .sort((a, b) => TOP_5_CITIES.indexOf(a.name) - TOP_5_CITIES.indexOf(b.name));
+
+    const loadCities = async () => {
+        if (cities.length > 0) return;
+        setCitiesLoading(true);
+        try {
+            const data = await getOlxCities();
+            setCities(data);
+        } catch (error) {
+            Alert.alert("Грешка", "Неуспешно зареждане на градовете.");
+        } finally {
+            setCitiesLoading(false);
+        }
+    };
 
     const isNewlyCreated = created === "true";
 
@@ -180,7 +217,7 @@ export default function ListingDetailsScreen() {
         setOlxPublishing(true);
         setShowPhoneModal(false);
         try {
-            const result = await publishToOlx(listing.id, phoneNumber);
+            const result = await publishToOlx(listing.id, phoneNumber, selectedCity?.id);
             setOlxPublishInfo({
                 published: true,
                 olxAdvertId: result.olxAdvertId,
@@ -215,11 +252,37 @@ export default function ListingDetailsScreen() {
         // Already published — show status badge
         if (olxPublishInfo?.published) {
             const status = olxPublishInfo.olxStatus;
+
+            // Special case: OLX account was disconnected
+            if (status === "olx_disconnected") {
+                return (
+                    <View>
+                        <View style={[styles.olxStatusBadge, { borderColor: Colors.warning }]}>
+                            <Text style={[styles.olxStatusText, { color: Colors.warning }]}>
+                                ⚠ OLX акаунтът е изключен
+                            </Text>
+                        </View>
+                        <TouchableOpacity
+                            style={[styles.olxConnectButton, { marginTop: 8 }]}
+                            onPress={handleConnectOlx}
+                            disabled={olxConnecting}
+                        >
+                            {olxConnecting ? (
+                                <ActivityIndicator color={Colors.primary} size="small" />
+                            ) : (
+                                <Text style={styles.olxConnectButtonText}>Свържи OLX</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                );
+            }
+
             const statusConfig = {
                 new: { text: "✓ Изпратено към OLX", color: Colors.primary },
                 waiting: { text: "✓ В изчакване на модерация", color: Colors.primary },
                 active: { text: "✓ Активно в OLX", color: "#22c55e" },
                 rejected: { text: "✗ Отказано от OLX", color: Colors.error },
+                removed: { text: "✗ Премахнато от OLX", color: Colors.textSecondary },
             };
             const config = statusConfig[status || "new"] || statusConfig["new"];
 
@@ -263,7 +326,7 @@ export default function ListingDetailsScreen() {
         return (
             <TouchableOpacity
                 style={styles.olxButton}
-                onPress={() => handlePublishToOlx()}
+                onPress={() => { loadCities(); setShowCityModal(true); }}
             >
                 <Text style={styles.olxButtonText}>Публикувай в OLX</Text>
             </TouchableOpacity>
@@ -421,6 +484,92 @@ export default function ListingDetailsScreen() {
                                 onPress={handlePhoneSubmit}
                             >
                                 <Text style={styles.modalSubmitText}>Публикувай</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* City Picker Modal */}
+            <Modal
+                visible={showCityModal}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowCityModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { maxHeight: "70%" }]}>
+                        <Text style={styles.modalTitle}>Изберете град</Text>
+                        <Text style={styles.modalSubtitle}>
+                            Изберете град за обявата в OLX.
+                        </Text>
+
+                        <TextInput
+                            style={styles.phoneInput}
+                            placeholder="Търси град..."
+                            placeholderTextColor={Colors.textSecondary}
+                            value={citySearch}
+                            onChangeText={setCitySearch}
+                            autoFocus
+                        />
+
+                        {citiesLoading ? (
+                            <ActivityIndicator color={Colors.primary} style={{ marginTop: 20 }} />
+                        ) : (
+                            <FlatList
+                                data={filteredCities}
+                                keyExtractor={(item) => item.id.toString()}
+                                style={{ marginTop: 12, maxHeight: 250 }}
+                                keyboardShouldPersistTaps="handled"
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.cityRow,
+                                            selectedCity?.id === item.id && styles.cityRowSelected,
+                                        ]}
+                                        onPress={() => {
+                                            setSelectedCity(item);
+                                            setCitySearch(`${item.name} (${item.municipality})`);
+                                        }}
+                                    >
+                                        <Text style={[
+                                            styles.cityRowText,
+                                            selectedCity?.id === item.id && styles.cityRowTextSelected,
+                                        ]}>
+                                            {item.name} ({item.municipality})
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
+                                ListEmptyComponent={
+                                    citySearch.trim().length > 0 ? (
+                                        <Text style={styles.cityEmptyText}>Няма резултати</Text>
+                                    ) : null
+                                }
+                            />
+                        )}
+
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity
+                                style={styles.modalCancelButton}
+                                onPress={() => {
+                                    setShowCityModal(false);
+                                    setCitySearch("");
+                                }}
+                            >
+                                <Text style={styles.modalCancelText}>Отказ</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[
+                                    styles.modalSubmitButton,
+                                    !selectedCity && { opacity: 0.5 },
+                                ]}
+                                disabled={!selectedCity}
+                                onPress={() => {
+                                    setShowCityModal(false);
+                                    handlePublishToOlx();
+                                }}
+                            >
+                                <Text style={styles.modalSubmitText}>Продължи</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -689,5 +838,28 @@ const styles = StyleSheet.create({
         color: Colors.error,
         fontSize: 16,
         fontWeight: "bold",
+    },
+    // ── City Picker Styles ──────────────────────────────────────
+    cityRow: {
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 4,
+    },
+    cityRowSelected: {
+        backgroundColor: `${Colors.primary}20`,
+    },
+    cityRowText: {
+        color: Colors.textPrimary,
+        fontSize: 15,
+    },
+    cityRowTextSelected: {
+        color: Colors.primary,
+        fontWeight: "600",
+    },
+    cityEmptyText: {
+        color: Colors.textSecondary,
+        fontSize: 14,
+        textAlign: "center",
+        marginTop: 16,
     },
 });

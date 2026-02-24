@@ -1,10 +1,12 @@
 import { useFonts } from "expo-font";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import * as WebBrowser from "expo-web-browser";
+import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Image, Linking, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { removeToken } from "../../lib/auth";
-import { disconnectOlx, getOlxStatus } from "../../lib/olx";
+import { disconnectOlx, getOlxAuthUrl, getOlxStatus } from "../../lib/olx";
 import { rateApp } from "../../lib/rateApp";
+import { setOlxConnectedCallback } from "../_layout";
 import { Colors } from "../constants/Colors";
 
 export default function ProfileScreen() {
@@ -13,7 +15,19 @@ export default function ProfileScreen() {
   });
 
   const [olxConnected, setOlxConnected] = useState(false);
+  const [olxConnecting, setOlxConnecting] = useState(false);
   const [olxDisconnecting, setOlxDisconnecting] = useState(false);
+
+  // Register callback for deep link OAuth completion
+  const onOlxConnected = useCallback(() => {
+    setOlxConnected(true);
+    setOlxConnecting(false);
+  }, []);
+
+  useEffect(() => {
+    setOlxConnectedCallback(onOlxConnected);
+    return () => setOlxConnectedCallback(null);
+  }, [onOlxConnected]);
 
   // Check OLX status whenever profile screen is focused
   useFocusEffect(
@@ -58,6 +72,17 @@ export default function ProfileScreen() {
           { text: "Прекъсни", style: "destructive", onPress: doDisconnect },
         ]
       );
+    }
+  };
+
+  const handleConnectOlx = async () => {
+    setOlxConnecting(true);
+    try {
+      const { url } = await getOlxAuthUrl();
+      await WebBrowser.openAuthSessionAsync(url, "bolt://olx-callback");
+    } catch (error) {
+      Alert.alert("Грешка", "Неуспешно свързване с OLX.");
+      setOlxConnecting(false);
     }
   };
 
@@ -109,14 +134,12 @@ export default function ProfileScreen() {
 
           {/* OLX Connection Section */}
           <View style={styles.profileContainer}>
-            <View style={[styles.profileItem, styles.profileItemLast]}>
-              <View style={styles.profileItemContent}>
-                <View style={[styles.olxDot, olxConnected && styles.olxDotConnected]} />
-                <Text style={styles.profileItemText}>
-                  {olxConnected ? "Свързан с OLX" : "OLX не е свързан"}
-                </Text>
-              </View>
-              {olxConnected && (
+            {olxConnected ? (
+              <View style={[styles.profileItem, styles.profileItemLast]}>
+                <View style={styles.profileItemContent}>
+                  <View style={[styles.olxDot, styles.olxDotConnected]} />
+                  <Text style={styles.profileItemText}>Свързан с OLX</Text>
+                </View>
                 <TouchableOpacity onPress={handleDisconnectOlx} disabled={olxDisconnecting}>
                   {olxDisconnecting ? (
                     <ActivityIndicator size="small" color={Colors.error} />
@@ -124,8 +147,24 @@ export default function ProfileScreen() {
                     <Text style={styles.olxDisconnectText}>Прекъсни</Text>
                   )}
                 </TouchableOpacity>
-              )}
-            </View>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.profileItem, styles.profileItemLast]}
+                onPress={handleConnectOlx}
+                disabled={olxConnecting}
+              >
+                <View style={styles.profileItemContent}>
+                  <View style={styles.olxDot} />
+                  <Text style={styles.profileItemText}>OLX не е свързан</Text>
+                </View>
+                {olxConnecting ? (
+                  <ActivityIndicator size="small" color={Colors.primary} />
+                ) : (
+                  <Text style={styles.olxConnectText}>Свържи</Text>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
 
           <View style={styles.profileContainer}>
@@ -229,6 +268,11 @@ const styles = StyleSheet.create({
   },
   olxDisconnectText: {
     color: Colors.error,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  olxConnectText: {
+    color: Colors.primary,
     fontSize: 14,
     fontWeight: "600",
   },

@@ -24,6 +24,9 @@ export const Colors = {
     /** Error/danger color */
     error: '#FF453A',
 
+    /** Warning color */
+    warning: '#FF9F0A',
+
     /** Pure white (semantic: light color for light mode context) */
     white: '#000000',
 

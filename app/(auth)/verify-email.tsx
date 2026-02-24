@@ -60,8 +60,37 @@ export default function VerifyEmailScreen() {
 
     const handleDigitChange = (text: string, index: number) => {
         // Only accept digits
-        const digit = text.replace(/[^0-9]/g, "").slice(-1);
+        const cleanText = text.replace(/[^0-9]/g, "");
 
+        // Handle paste operation (length > 1)
+        if (cleanText.length > 1) {
+            const newDigits = [...digits];
+            for (let i = 0; i < cleanText.length; i++) {
+                if (index + i < CODE_LENGTH) {
+                    newDigits[index + i] = cleanText[i];
+                }
+            }
+            setDigits(newDigits);
+
+            if (status === "error") {
+                setStatus("idle");
+                setStatusMessage("");
+            }
+
+            const nextFocusIndex = Math.min(index + cleanText.length, CODE_LENGTH - 1);
+            inputRefs.current[nextFocusIndex]?.focus();
+
+            // Auto-submit when all digits are filled from paste
+            const fullCode = newDigits.join("");
+            if (fullCode.length === CODE_LENGTH) {
+                Keyboard.dismiss();
+                handleVerify(fullCode);
+            }
+            return;
+        }
+
+        // Normal single digit typing
+        const digit = cleanText.slice(-1);
         const newDigits = [...digits];
         newDigits[index] = digit;
         setDigits(newDigits);
@@ -77,7 +106,7 @@ export default function VerifyEmailScreen() {
             inputRefs.current[index + 1]?.focus();
         }
 
-        // Auto-submit when all digits are filled
+        // Auto-submit when all digits are filled by typing
         if (digit && index === CODE_LENGTH - 1) {
             const code = newDigits.join("");
             if (code.length === CODE_LENGTH) {
@@ -197,7 +226,7 @@ export default function VerifyEmailScreen() {
                                     onChangeText={(text) => handleDigitChange(text, index)}
                                     onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
                                     keyboardType="number-pad"
-                                    maxLength={1}
+                                    maxLength={CODE_LENGTH}
                                     textContentType="oneTimeCode"
                                     autoFocus={index === 0}
                                     selectTextOnFocus

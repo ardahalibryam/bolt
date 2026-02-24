@@ -16,7 +16,6 @@ import { Colors } from "../constants/Colors";
 export default function ForgotPasswordScreen() {
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const [isSuccess, setIsSuccess] = useState(false);
 
     const [fontsLoaded] = useFonts({
         "Montserrat-Regular": require("@expo-google-fonts/montserrat/Montserrat_400Regular.ttf"),
@@ -37,10 +36,13 @@ export default function ForgotPasswordScreen() {
         try {
             await forgotPassword(email.trim());
         } catch {
-            // Ignore errors - always show success for security
+            // Ignore errors - always navigate for security
         } finally {
             setIsLoading(false);
-            setIsSuccess(true);
+            router.push({
+                pathname: "/(auth)/reset-password",
+                params: { email: email.trim() },
+            });
         }
     };
 
@@ -48,28 +50,12 @@ export default function ForgotPasswordScreen() {
         router.replace("/(auth)/sign-in");
     };
 
-    if (isSuccess) {
-        return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.content}>
-                    <Text style={styles.title}>Готово</Text>
-                    <Text style={styles.description}>
-                        Ако съществува акаунт с този имейл, ще получиш линк за смяна на паролата.
-                    </Text>
-                    <TouchableOpacity style={styles.primaryButton} onPress={handleBackToLogin}>
-                        <Text style={styles.primaryButtonText}>Назад към вход</Text>
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
-        );
-    }
-
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
                 <Text style={styles.title}>Забравена парола</Text>
                 <Text style={styles.description}>
-                    Въведи имейла си и ще ти изпратим линк за възстановяване на паролата.
+                    Въведи имейла си и ще ти изпратим код за възстановяване на паролата.
                 </Text>
 
                 <View style={styles.inputContainer}>
@@ -93,7 +79,7 @@ export default function ForgotPasswordScreen() {
                     {isLoading ? (
                         <ActivityIndicator color="#FFFFFF" />
                     ) : (
-                        <Text style={styles.primaryButtonText}>Изпрати линк</Text>
+                        <Text style={styles.primaryButtonText}>Изпрати код</Text>
                     )}
                 </TouchableOpacity>
 
