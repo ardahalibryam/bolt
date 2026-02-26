@@ -182,12 +182,17 @@ export default function HomeScreen() {
                 ))}
                 {/* Placeholder cards for empty slots */}
                 {Array.from({ length: 4 - listings.length }).map((_, index) => (
-                  <View key={`placeholder-${index}`} style={styles.placeholderCard}>
+                  <TouchableOpacity
+                    key={`placeholder-${index}`}
+                    style={styles.placeholderCard}
+                    onPress={() => router.push("/camera")}
+                    activeOpacity={0.7}
+                  >
                     <View style={styles.placeholderImageContainer}>
                       <Text style={styles.placeholderIcon}>📦</Text>
                     </View>
                     <Text style={styles.placeholderText}>Следващата ви обява</Text>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
             </View>

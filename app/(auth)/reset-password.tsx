@@ -229,6 +229,7 @@ export default function ResetPasswordScreen() {
                         {email
                             ? `Изпратихме 6-цифрен код на ${email}`
                             : "Изпратихме 6-цифрен код на твоя имейл"}
+                            <br />Проверете и спам папката!
                     </Text>
 
                     {/* 6-digit Code Input Row */}
@@ -321,7 +322,7 @@ export default function ResetPasswordScreen() {
                         {isLoading ? (
                             <ActivityIndicator color="#FFFFFF" />
                         ) : (
-                            <Text style={styles.primaryButtonText}>Нулиране на парола</Text>
+                            <Text style={styles.primaryButtonText}>Смяна на парола</Text>
                         )}
                     </TouchableOpacity>
 

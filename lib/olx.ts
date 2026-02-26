@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPost } from "./apiClient";
+import { apiDelete, apiGet, apiPost, apiPut } from "./apiClient";
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -23,6 +23,13 @@ export interface OlxCity {
     id: number;
     name: string;
     municipality: string;
+}
+
+export interface OlxAccount {
+    email: string | null;
+    phone?: string;
+    cityId?: number;
+    cityName?: string;
 }
 
 // ── API Functions ────────────────────────────────────────────────
@@ -73,4 +80,26 @@ export async function getOlxPublishStatus(
 /** Disconnect the user's OLX account */
 export async function disconnectOlx(): Promise<void> {
     await apiDelete("/olx/disconnect");
+}
+
+/** Get the user's OLX profile (email, phone, city) */
+export async function getOlxProfile(): Promise<OlxAccount> {
+    const data = await apiGet<{
+        olxEmail: string | null;
+        phone?: string;
+        city?: { id: number; name: string; municipality: string } | null;
+    }>("/olx/profile");
+    return {
+        email: data.olxEmail,
+        phone: data.phone,
+        cityId: data.city?.id,
+        cityName: data.city?.name,
+    };
+}
+
+/** Update the user's OLX profile (phone, city) */
+export async function updateOlxProfile(
+    data: { phone?: string; cityId?: number }
+): Promise<void> {
+    await apiPut("/olx/profile", data);
 }

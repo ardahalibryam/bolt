@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, BackHandler, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LoadingScreen } from "../components/LoadingScreen";
 import { ApiError } from "../lib/apiClient";
@@ -18,6 +18,22 @@ export default function PriceScreen() {
   useEffect(() => {
     loadPricing();
   }, [draftId]);
+
+  // Intercept Android back button with discard warning
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
+      Alert.alert(
+        "Отказ от обявата",
+        "Сигурни ли сте? Обявата ще бъде изтрита.",
+        [
+          { text: "Остани", style: "cancel" },
+          { text: "Изтрий", style: "destructive", onPress: () => router.back() },
+        ]
+      );
+      return true; // Prevent default back
+    });
+    return () => backHandler.remove();
+  }, []);
 
   const loadPricing = async () => {
     const id = Array.isArray(draftId) ? draftId[0] : draftId;

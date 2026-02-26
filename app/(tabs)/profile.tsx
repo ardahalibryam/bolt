@@ -135,19 +135,28 @@ export default function ProfileScreen() {
           {/* OLX Connection Section */}
           <View style={styles.profileContainer}>
             {olxConnected ? (
-              <View style={[styles.profileItem, styles.profileItemLast]}>
-                <View style={styles.profileItemContent}>
-                  <View style={[styles.olxDot, styles.olxDotConnected]} />
-                  <Text style={styles.profileItemText}>Свързан с OLX</Text>
-                </View>
-                <TouchableOpacity onPress={handleDisconnectOlx} disabled={olxDisconnecting}>
-                  {olxDisconnecting ? (
-                    <ActivityIndicator size="small" color={Colors.error} />
-                  ) : (
-                    <Text style={styles.olxDisconnectText}>Прекъсни</Text>
-                  )}
+              <>
+                <TouchableOpacity style={styles.profileItem} onPress={() => router.push("/olx-details")}>
+                  <View style={styles.profileItemContent}>
+                    <Image source={require("../../assets/images/icons/profile/profile.png")} style={styles.profileItemImage} resizeMode="contain" />
+                    <Text style={styles.profileItemText}>OLX Данни</Text>
+                  </View>
+                  <Image source={require("../../assets/images/icons/profile/arrow.png")} style={styles.profileItemImage} resizeMode="contain" />
                 </TouchableOpacity>
-              </View>
+                <View style={[styles.profileItem, styles.profileItemLast]}>
+                  <View style={styles.profileItemContent}>
+                    <View style={[styles.olxDot, styles.olxDotConnected]} />
+                    <Text style={styles.profileItemText}>Свързан с OLX</Text>
+                  </View>
+                  <TouchableOpacity onPress={handleDisconnectOlx} disabled={olxDisconnecting}>
+                    {olxDisconnecting ? (
+                      <ActivityIndicator size="small" color={Colors.error} />
+                    ) : (
+                      <Text style={styles.olxDisconnectText}>Прекъсни</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </>
             ) : (
               <TouchableOpacity
                 style={[styles.profileItem, styles.profileItemLast]}
