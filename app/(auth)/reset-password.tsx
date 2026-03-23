@@ -229,7 +229,7 @@ export default function ResetPasswordScreen() {
                         {email
                             ? `Изпратихме 6-цифрен код на ${email}`
                             : "Изпратихме 6-цифрен код на твоя имейл"}
-                            <br />Проверете и спам папката!
+                            {"\n"}Проверете и спам папката!
                     </Text>
 
                     {/* 6-digit Code Input Row */}
