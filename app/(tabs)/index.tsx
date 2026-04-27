@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { PressableScale } from "../../components/PressableScale";
 import { getMyListings, Listing } from "../../lib/listings";
 import { Colors } from "../constants/Colors";
 
@@ -85,10 +86,10 @@ export default function HomeScreen() {
           </View>
 
           {/* CTA Box - Снимай и продай */}
-          <TouchableOpacity
+          <PressableScale
             style={styles.ctaBox}
             onPress={() => router.push("/camera")}
-            activeOpacity={0.9}
+            scaleTo={0.97}
           >
             <LinearGradient
               colors={["#7FB1F3", "#1374F6"]}
@@ -113,7 +114,7 @@ export default function HomeScreen() {
                 </View>
               </View>
             </LinearGradient>
-          </TouchableOpacity>
+          </PressableScale>
 
           {/* Tips Section */}
           <View style={styles.section}>

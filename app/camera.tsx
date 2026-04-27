@@ -2,8 +2,10 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
-import { ActivityIndicator, Alert, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Dimensions, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LogoSpinner } from "../components/LogoSpinner";
+import { PressableScale } from "../components/PressableScale";
 import { uploadImage } from "../lib/cloudinary";
 import { createDraft } from "../lib/drafts";
 import { compressImage } from "../lib/imageCompression";
@@ -17,6 +19,12 @@ export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [showTips, setShowTips] = useState(false);
   const [isCreatingDraft, setIsCreatingDraft] = useState(false);
+  const [confirmationData, setConfirmationData] = useState<{
+    draftId: string;
+    detectedNameBg: string;
+  } | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState("");
   const cameraRef = useRef<CameraView>(null);
 
   if (!permission) {
@@ -43,19 +51,13 @@ export default function CameraScreen() {
     try {
       setIsCreatingDraft(true);
 
-      console.log("Compressing image...");
       const compressedUri = await compressImage(uri);
-      console.log("Image compressed successfully");
-
-      console.log("Uploading compressed image to Cloudinary...");
       const imageUrl = await uploadImage(compressedUri);
-      console.log("Image uploaded successfully:", imageUrl);
-
-      console.log("Creating draft with URL...");
       const { draftId, detectedNameBg } = await createDraft(imageUrl);
-      console.log("Draft created successfully, ID:", draftId);
 
-      router.push({ pathname: "/price", params: { draftId, productName: detectedNameBg || "" } });
+      setIsEditing(false);
+      setEditedName("");
+      setConfirmationData({ draftId, detectedNameBg: detectedNameBg || "" });
     } catch (error) {
       console.error("Error in image processing flow:", error);
       const message = error instanceof Error ? error.message : "Възникна грешка. Моля, опитайте отново.";
@@ -63,6 +65,27 @@ export default function CameraScreen() {
     } finally {
       setIsCreatingDraft(false);
     }
+  };
+
+  const handleConfirm = (nameOverride?: string) => {
+    if (!confirmationData) return;
+    const { draftId, detectedNameBg } = confirmationData;
+    const productName = nameOverride ?? detectedNameBg;
+    setConfirmationData(null);
+    setIsEditing(false);
+    setEditedName("");
+    router.push({ pathname: "/price", params: { draftId, productName } });
+  };
+
+  const handleRetry = () => {
+    setConfirmationData(null);
+    setIsEditing(false);
+    setEditedName("");
+  };
+
+  const handleStartEdit = () => {
+    setEditedName(confirmationData?.detectedNameBg ?? "");
+    setIsEditing(true);
   };
 
   const takePicture = async () => {
@@ -161,9 +184,58 @@ export default function CameraScreen() {
         {/* Loading Overlay - shown while processing image */}
         {isCreatingDraft && (
           <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color={Colors.primary} />
+            <LogoSpinner size={96} />
             <Text style={styles.loadingText}>Обработване...</Text>
           </View>
+        )}
+
+        {/* Item Confirmation Overlay */}
+        {confirmationData && (
+          <KeyboardAvoidingView
+            style={styles.confirmationOverlay}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+            <View style={styles.confirmationCard}>
+              {!isEditing ? (
+                <>
+                  <Text style={styles.confirmationQuestion}>Това ли е вашият предмет?</Text>
+                  <Text style={styles.confirmationName}>
+                    {confirmationData.detectedNameBg || "Неизвестен предмет"}
+                  </Text>
+                  <PressableScale style={styles.confirmButton} onPress={() => handleConfirm()}>
+                    <Text style={styles.confirmButtonText}>Да, продължи</Text>
+                  </PressableScale>
+                  <PressableScale style={styles.retryButton} onPress={handleStartEdit}>
+                    <Text style={styles.retryButtonText}>Не, коригирай</Text>
+                  </PressableScale>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.confirmationQuestion}>Какъв е вашият предмет?</Text>
+                  <TextInput
+                    style={styles.nameInput}
+                    value={editedName}
+                    onChangeText={setEditedName}
+                    placeholder="Напр. iPhone 15"
+                    placeholderTextColor={Colors.inactive}
+                    autoFocus
+                    returnKeyType="done"
+                    onSubmitEditing={() => editedName.trim() && handleConfirm(editedName.trim())}
+                  />
+                  <PressableScale
+                    style={[styles.confirmButton, !editedName.trim() && styles.confirmButtonDisabled]}
+                    onPress={() => editedName.trim() && handleConfirm(editedName.trim())}
+                    disabled={!editedName.trim()}
+                  >
+                    <Text style={styles.confirmButtonText}>Продължи</Text>
+                  </PressableScale>
+                  <PressableScale style={styles.retryButton} onPress={handleRetry}>
+                    <Text style={styles.retryButtonText}>Отказ, опитай отново</Text>
+                  </PressableScale>
+                </>
+              )}
+            </View>
+          </KeyboardAvoidingView>
         )}
 
         {/* Bottom Control Bar */}
@@ -183,10 +255,11 @@ export default function CameraScreen() {
             </TouchableOpacity>
 
             {/* Snap Button */}
-            <TouchableOpacity
+            <PressableScale
               style={[styles.snapButton, isCreatingDraft && styles.snapButtonDisabled]}
               onPress={takePicture}
               disabled={isCreatingDraft}
+              scaleTo={0.9}
             >
               {isCreatingDraft ? (
                 <ActivityIndicator size="large" color="#fff" />
@@ -197,7 +270,7 @@ export default function CameraScreen() {
                   resizeMode="contain"
                 />
               )}
-            </TouchableOpacity>
+            </PressableScale>
 
             {/* Tips Toggle Button */}
             <TouchableOpacity
@@ -377,6 +450,80 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontSize: 18,
     marginTop: 16,
+    fontWeight: "500",
+  },
+  confirmationOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.88)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 400,
+    paddingHorizontal: 24,
+  },
+  confirmationCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 24,
+    padding: 24,
+    width: "100%",
+    alignItems: "center",
+  },
+  confirmationQuestion: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  confirmationName: {
+    fontSize: 26,
+    color: Colors.textPrimary,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 28,
+  },
+  nameInput: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    fontSize: 18,
+    color: Colors.textPrimary,
+    backgroundColor: Colors.background,
+    marginBottom: 20,
+  },
+  confirmButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  confirmButtonDisabled: {
+    opacity: 0.4,
+  },
+  confirmButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  retryButton: {
+    borderRadius: 12,
+    paddingVertical: 14,
+    width: "100%",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  retryButtonText: {
+    color: Colors.textPrimary,
+    fontSize: 16,
     fontWeight: "500",
   },
 });

@@ -21,6 +21,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import CityPickerModal from "../../components/CityPickerModal";
 import { LoadingScreen } from "../../components/LoadingScreen";
+import { PressableScale } from "../../components/PressableScale";
+import { SuccessCelebration } from "../../components/SuccessCelebration";
 import { deleteListing, getListing, Listing } from "../../lib/listings";
 import {
     getOlxAuthUrl,
@@ -58,6 +60,12 @@ export default function ListingDetailsScreen() {
     const [showCityModal, setShowCityModal] = useState(false);
     const [selectedCity, setSelectedCity] = useState<OlxCity | null>(null);
 
+    // ── Success celebration state ───────────────────────────────
+    const [celebration, setCelebration] = useState<{ visible: boolean; message: string }>({
+        visible: false,
+        message: "",
+    });
+
     const isNewlyCreated = created === "true";
 
     // ── Disable back navigation when just created ───────────────
@@ -85,6 +93,9 @@ export default function ListingDetailsScreen() {
         try {
             const data = await getListing(id);
             setListing(data);
+            if (isNewlyCreated) {
+                setCelebration({ visible: true, message: "Обявата е създадена!" });
+            }
         } catch (error) {
             Alert.alert("Грешка", "Неуспешно зареждане на обявата.");
             router.back();
@@ -214,7 +225,7 @@ export default function ListingDetailsScreen() {
                 olxAdvertId: result.olxAdvertId,
                 olxStatus: "new",
             });
-            Alert.alert("Успех!", "Обявата е изпратена към OLX.");
+            setCelebration({ visible: true, message: "Обявата е изпратена към OLX!" });
         } catch (error: any) {
             // If backend returns 400 with "phone required", show phone modal
             if (error?.status === 400 && error?.message?.toLowerCase().includes("phone")) {
@@ -253,7 +264,7 @@ export default function ListingDetailsScreen() {
                                 ⚠ OLX акаунтът е изключен
                             </Text>
                         </View>
-                        <TouchableOpacity
+                        <PressableScale
                             style={[styles.olxConnectButton, { marginTop: 8 }]}
                             onPress={handleConnectOlx}
                             disabled={olxConnecting}
@@ -263,7 +274,7 @@ export default function ListingDetailsScreen() {
                             ) : (
                                 <Text style={styles.olxConnectButtonText}>Свържи OLX</Text>
                             )}
-                        </TouchableOpacity>
+                        </PressableScale>
                     </View>
                 );
             }
@@ -299,7 +310,7 @@ export default function ListingDetailsScreen() {
         // Not connected — show connect button
         if (!olxConnected) {
             return (
-                <TouchableOpacity
+                <PressableScale
                     style={styles.olxConnectButton}
                     onPress={handleConnectOlx}
                     disabled={olxConnecting}
@@ -309,18 +320,18 @@ export default function ListingDetailsScreen() {
                     ) : (
                         <Text style={styles.olxConnectButtonText}>Свържи OLX акаунт</Text>
                     )}
-                </TouchableOpacity>
+                </PressableScale>
             );
         }
 
         // Connected — show publish button
         return (
-            <TouchableOpacity
+            <PressableScale
                 style={styles.olxButton}
                 onPress={handleStartPublish}
             >
                 <Text style={styles.olxButtonText}>Публикувай в OLX</Text>
-            </TouchableOpacity>
+            </PressableScale>
         );
     };
 
@@ -407,16 +418,16 @@ export default function ListingDetailsScreen() {
                     {renderOlxButton()}
 
                     {isNewlyCreated && (
-                        <TouchableOpacity
+                        <PressableScale
                             style={styles.doneButton}
                             onPress={() => router.replace("/(tabs)")}
                         >
                             <Text style={styles.doneButtonText}>Завърши обява</Text>
-                        </TouchableOpacity>
+                        </PressableScale>
                     )}
 
                     {/* Delete Button */}
-                    <TouchableOpacity
+                    <PressableScale
                         style={[styles.deleteButton, deleting && styles.buttonDisabled]}
                         onPress={handleDelete}
                         disabled={deleting}
@@ -426,7 +437,7 @@ export default function ListingDetailsScreen() {
                         ) : (
                             <Text style={styles.deleteButtonText}>Изтрий обявата</Text>
                         )}
-                    </TouchableOpacity>
+                    </PressableScale>
                 </View>
             </ScrollView>
 
@@ -491,6 +502,13 @@ export default function ListingDetailsScreen() {
                     handlePublishToOlx();
                 }}
                 onClose={() => setShowCityModal(false)}
+            />
+
+            {/* Success Celebration */}
+            <SuccessCelebration
+                visible={celebration.visible}
+                message={celebration.message}
+                onComplete={() => setCelebration({ visible: false, message: "" })}
             />
         </SafeAreaView>
     );

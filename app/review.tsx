@@ -13,6 +13,7 @@ import {
     View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { PressableScale } from "../components/PressableScale";
 import { finalizeDraft } from "../lib/drafts";
 import { Colors } from "./constants/Colors";
 
@@ -93,7 +94,7 @@ export default function ReviewScreen() {
                         textAlignVertical="top"
                     />
 
-                    <TouchableOpacity
+                    <PressableScale
                         style={[styles.publishButton, submitting && styles.buttonDisabled]}
                         onPress={handlePublish}
                         disabled={submitting}
@@ -103,7 +104,7 @@ export default function ReviewScreen() {
                         ) : (
                             <Text style={styles.publishButtonText}>Публикувай</Text>
                         )}
-                    </TouchableOpacity>
+                    </PressableScale>
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>

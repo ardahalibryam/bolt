@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, BackHandler, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Alert, Animated, BackHandler, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LoadingScreen } from "../components/LoadingScreen";
+import { PressableScale } from "../components/PressableScale";
 import { ApiError } from "../lib/apiClient";
 import { DraftPricing, generateDraftPricing, generateDraftText, getDraftPricing } from "../lib/drafts";
 import { Colors } from "./constants/Colors";
@@ -15,9 +16,30 @@ export default function PriceScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
+  const fastGlow = useRef(new Animated.Value(0)).current;
+  const recGlow = useRef(new Animated.Value(0)).current;
+  const maxGlow = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
     loadPricing();
   }, [draftId]);
+
+  useEffect(() => {
+    if (!pricing) return;
+    const animate = (val: Animated.Value, target: number) =>
+      Animated.timing(val, { toValue: target, duration: 220, useNativeDriver: false }).start();
+    animate(fastGlow, selectedPrice === pricing.fast ? 1 : 0);
+    animate(recGlow, selectedPrice === pricing.recommended ? 1 : 0);
+    animate(maxGlow, selectedPrice === pricing.max ? 1 : 0);
+  }, [selectedPrice, pricing, fastGlow, recGlow, maxGlow]);
+
+  const glowStyle = (val: Animated.Value) => ({
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: val.interpolate({ inputRange: [0, 1], outputRange: [0, 0.7] }),
+    shadowRadius: val.interpolate({ inputRange: [0, 1], outputRange: [0, 18] }),
+    elevation: val.interpolate({ inputRange: [0, 1], outputRange: [0, 14] }),
+  });
 
   // Intercept Android back button with discard warning
   useEffect(() => {
@@ -143,42 +165,48 @@ export default function PriceScreen() {
         <Text style={styles.title}>Изберете цена</Text>
 
         {/* Option: Fast */}
-        <TouchableOpacity
-          style={[styles.option, selectedPrice === pricing.fast && styles.selectedOption]}
-          onPress={() => setSelectedPrice(pricing.fast)}
-        >
-          <View style={styles.optionInfo}>
-            <Text style={styles.optionLabel}>⚡ Бърза продажба</Text>
-            <Text style={styles.optionHelper}>По-бърза продажба</Text>
-          </View>
-          <Text style={styles.optionPrice}>{pricing.fast} €</Text>
-        </TouchableOpacity>
+        <Animated.View style={[styles.optionWrapper, glowStyle(fastGlow)]}>
+          <TouchableOpacity
+            style={[styles.option, selectedPrice === pricing.fast && styles.selectedOption]}
+            onPress={() => setSelectedPrice(pricing.fast)}
+          >
+            <View style={styles.optionInfo}>
+              <Text style={styles.optionLabel}>⚡ Бърза продажба</Text>
+              <Text style={styles.optionHelper}>По-бърза продажба</Text>
+            </View>
+            <Text style={styles.optionPrice}>{pricing.fast} €</Text>
+          </TouchableOpacity>
+        </Animated.View>
 
         {/* Option: Recommended */}
-        <TouchableOpacity
-          style={[styles.option, selectedPrice === pricing.recommended && styles.selectedOption]}
-          onPress={() => setSelectedPrice(pricing.recommended)}
-        >
-          <View style={styles.optionInfo}>
-            <Text style={styles.optionLabel}>⭐ Препоръчана цена</Text>
-            <Text style={styles.optionHelper}>Най-добър баланс</Text>
-          </View>
-          <Text style={styles.optionPrice}>{pricing.recommended} €</Text>
-        </TouchableOpacity>
+        <Animated.View style={[styles.optionWrapper, glowStyle(recGlow)]}>
+          <TouchableOpacity
+            style={[styles.option, selectedPrice === pricing.recommended && styles.selectedOption]}
+            onPress={() => setSelectedPrice(pricing.recommended)}
+          >
+            <View style={styles.optionInfo}>
+              <Text style={styles.optionLabel}>⭐ Препоръчана цена</Text>
+              <Text style={styles.optionHelper}>Най-добър баланс</Text>
+            </View>
+            <Text style={styles.optionPrice}>{pricing.recommended} €</Text>
+          </TouchableOpacity>
+        </Animated.View>
 
         {/* Option: Max */}
-        <TouchableOpacity
-          style={[styles.option, selectedPrice === pricing.max && styles.selectedOption]}
-          onPress={() => setSelectedPrice(pricing.max)}
-        >
-          <View style={styles.optionInfo}>
-            <Text style={styles.optionLabel}>💰 Максимална цена</Text>
-            <Text style={styles.optionHelper}>Максимална печалба</Text>
-          </View>
-          <Text style={styles.optionPrice}>{pricing.max} €</Text>
-        </TouchableOpacity>
+        <Animated.View style={[styles.optionWrapper, glowStyle(maxGlow)]}>
+          <TouchableOpacity
+            style={[styles.option, selectedPrice === pricing.max && styles.selectedOption]}
+            onPress={() => setSelectedPrice(pricing.max)}
+          >
+            <View style={styles.optionInfo}>
+              <Text style={styles.optionLabel}>💰 Максимална цена</Text>
+              <Text style={styles.optionHelper}>Максимална печалба</Text>
+            </View>
+            <Text style={styles.optionPrice}>{pricing.max} €</Text>
+          </TouchableOpacity>
+        </Animated.View>
 
-        <TouchableOpacity
+        <PressableScale
           style={[styles.button, submitting && styles.buttonDisabled]}
           onPress={handleSubmit}
           disabled={submitting}
@@ -188,7 +216,7 @@ export default function PriceScreen() {
           ) : (
             <Text style={styles.buttonText}>Генерирай обява</Text>
           )}
-        </TouchableOpacity>
+        </PressableScale>
       </ScrollView>
     </SafeAreaView>
   );
@@ -222,6 +250,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontWeight: "600",
   },
+  optionWrapper: {
+    marginBottom: 16,
+    borderRadius: 12,
+  },
   option: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -229,7 +261,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     padding: 16,
     borderRadius: 12,
-    marginBottom: 16,
     borderWidth: 2,
     borderColor: Colors.transparent,
   },

@@ -1,5 +1,6 @@
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Colors } from "../app/constants/Colors";
+import { LogoSpinner } from "./LogoSpinner";
 
 interface LoadingScreenProps {
     /** Optional background color, defaults to theme background */
@@ -13,7 +14,7 @@ interface LoadingScreenProps {
 export function LoadingScreen({ backgroundColor }: LoadingScreenProps) {
     return (
         <View style={[styles.container, backgroundColor && { backgroundColor }]}>
-            <ActivityIndicator size="large" color={Colors.primary} />
+            <LogoSpinner size={80} />
         </View>
     );
 }
