@@ -22,6 +22,8 @@ interface RequestOptions {
     body?: unknown;
     headers?: Record<string, string>;
     skipAuth?: boolean;
+    /** Optional AbortSignal for request cancellation / timeout. */
+    signal?: AbortSignal;
 }
 
 /**
@@ -40,7 +42,7 @@ async function apiRequest<T>(
     method: RequestMethod,
     options: RequestOptions = {}
 ): Promise<T> {
-    const { body, headers = {}, skipAuth = false } = options;
+    const { body, headers = {}, skipAuth = false, signal } = options;
 
     const requestHeaders: Record<string, string> = {
         "Content-Type": "application/json",
@@ -59,6 +61,7 @@ async function apiRequest<T>(
         method,
         headers: requestHeaders,
         body: body ? JSON.stringify(body) : undefined,
+        signal,
     });
 
     // Handle 401 Unauthorized — but NOT for /olx/* endpoints

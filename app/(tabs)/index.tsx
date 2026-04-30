@@ -73,16 +73,28 @@ export default function HomeScreen() {
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.greeting}>Здравей!</Text>
-            <TouchableOpacity
-              style={styles.historyButton}
-              onPress={() => router.push("/history")}
-            >
-              <Image
-                source={require("../../assets/images/icons/nav/history.png")}
-                style={styles.historyIcon}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={() => router.push("/history")}
+              >
+                <Image
+                  source={require("../../assets/images/icons/nav/history.png")}
+                  style={styles.historyIcon}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.headerIconButton}
+                onPress={() => router.push("/(tabs)/profile")}
+              >
+                <Image
+                  source={require("../../assets/images/icons/nav/user.png")}
+                  style={styles.profileIcon}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* CTA Box - Снимай и продай */}
@@ -241,12 +253,22 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: Colors.textPrimary,
   },
-  historyButton: {
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  headerIconButton: {
     padding: 8,
   },
   historyIcon: {
     width: 28,
     height: 28,
+  },
+  profileIcon: {
+    width: 26,
+    height: 26,
+    tintColor: Colors.textPrimary,
   },
   ctaBox: {
     borderRadius: 16,

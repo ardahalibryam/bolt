@@ -21,6 +21,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import CityPickerModal from "../../components/CityPickerModal";
 import { LoadingScreen } from "../../components/LoadingScreen";
+import { PhotoCarousel } from "../../components/PhotoCarousel";
 import { PressableScale } from "../../components/PressableScale";
 import { SuccessCelebration } from "../../components/SuccessCelebration";
 import { deleteListing, getListing, Listing } from "../../lib/listings";
@@ -364,11 +365,14 @@ export default function ListingDetailsScreen() {
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
-                <Image
-                    source={{ uri: listing.imageUrl }}
-                    style={styles.image}
-                    resizeMode="cover"
-                />
+                <View style={styles.carouselWrapper}>
+                    <PhotoCarousel
+                        images={[listing.imageUrl, ...(listing.additionalImageUrls || [])]}
+                        width={Math.round(width * 0.6)}
+                        height={Math.round(width * 0.45)}
+                        borderRadius={12}
+                    />
+                </View>
 
                 <View style={styles.detailsContainer}>
                     {/* Title + Copy */}
@@ -546,13 +550,8 @@ const styles = StyleSheet.create({
     content: {
         paddingBottom: 40,
     },
-    image: {
-        width: width * 0.6,
-        height: width * 0.45,
-        alignSelf: "center",
-        borderRadius: 12,
+    carouselWrapper: {
         marginVertical: 16,
-        backgroundColor: Colors.surface,
     },
     detailsContainer: {
         padding: 20,

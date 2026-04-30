@@ -9,7 +9,7 @@ import { DraftPricing, generateDraftPricing, generateDraftText, getDraftPricing 
 import { Colors } from "./constants/Colors";
 
 export default function PriceScreen() {
-  const { draftId, productName } = useLocalSearchParams();
+  const { draftId, productName, coverUrl, additionalImageUrls } = useLocalSearchParams();
   const [pricing, setPricing] = useState<DraftPricing | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -125,7 +125,11 @@ export default function PriceScreen() {
         params: {
           draftId: id,
           title,
-          description
+          description,
+          coverUrl: Array.isArray(coverUrl) ? coverUrl[0] : (coverUrl || ""),
+          additionalImageUrls: Array.isArray(additionalImageUrls)
+            ? additionalImageUrls[0]
+            : (additionalImageUrls || "[]"),
         }
       });
     } catch (error) {

@@ -1,32 +1,58 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    Dimensions,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
     StyleSheet,
     Text,
     TextInput,
-    TouchableOpacity,
     View
 } from "react-native";
+
+const { width: reviewWidth } = Dimensions.get("window");
 import { SafeAreaView } from "react-native-safe-area-context";
+import { PhotoCarousel } from "../components/PhotoCarousel";
 import { PressableScale } from "../components/PressableScale";
 import { finalizeDraft } from "../lib/drafts";
 import { Colors } from "./constants/Colors";
 
 export default function ReviewScreen() {
-    const { draftId, title: initialTitle, description: initialDescription } = useLocalSearchParams<{
+    const {
+        draftId,
+        title: initialTitle,
+        description: initialDescription,
+        coverUrl,
+        additionalImageUrls,
+    } = useLocalSearchParams<{
         draftId: string;
         title: string;
         description: string;
+        coverUrl?: string;
+        additionalImageUrls?: string;
     }>();
 
     const [title, setTitle] = useState(initialTitle || "");
     const [description, setDescription] = useState(initialDescription || "");
     const [submitting, setSubmitting] = useState(false);
+
+    const allImages = useMemo<string[]>(() => {
+        const cover = Array.isArray(coverUrl) ? coverUrl[0] : coverUrl;
+        const extrasRaw = Array.isArray(additionalImageUrls) ? additionalImageUrls[0] : additionalImageUrls;
+        let extras: string[] = [];
+        if (extrasRaw) {
+            try {
+                const parsed = JSON.parse(extrasRaw);
+                if (Array.isArray(parsed)) extras = parsed.filter((s) => typeof s === "string");
+            } catch {
+                // Ignore malformed param — just show the cover (or nothing)
+            }
+        }
+        return cover ? [cover, ...extras] : extras;
+    }, [coverUrl, additionalImageUrls]);
 
     const handlePublish = async () => {
         if (!title.trim()) {
@@ -72,6 +98,17 @@ export default function ReviewScreen() {
                 style={{ flex: 1 }}
             >
                 <ScrollView contentContainerStyle={styles.content}>
+                    {allImages.length > 0 && (
+                        <View style={styles.carouselWrapper}>
+                            <PhotoCarousel
+                                images={allImages}
+                                width={Math.round(reviewWidth * 0.6)}
+                                height={Math.round(reviewWidth * 0.45)}
+                                borderRadius={12}
+                            />
+                        </View>
+                    )}
+
                     <Text style={styles.label}>Заглавие</Text>
                     <TextInput
                         style={styles.input}
@@ -133,6 +170,9 @@ const styles = StyleSheet.create({
     content: {
         padding: 20,
         paddingBottom: 40,
+    },
+    carouselWrapper: {
+        marginBottom: 16,
     },
     label: {
         color: Colors.textSecondary,

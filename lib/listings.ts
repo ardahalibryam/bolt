@@ -6,6 +6,7 @@ export interface Listing {
     description: string;
     price: number;
     imageUrl: string;
+    additionalImageUrls: string[];
     createdAt: string;
     currency?: string;
     externalPlatformHint?: string;
@@ -18,6 +19,7 @@ interface BackendListing {
     description: string;
     price: number;
     imageUrl: string;
+    additionalImageUrls?: string[];
     createdAt: string;
     currency?: string;
     externalPlatformHint?: string;
@@ -50,6 +52,7 @@ function mapBackendListing(item: BackendListing): Listing {
         description: item.description,
         price: item.price,
         imageUrl: item.imageUrl,
+        additionalImageUrls: item.additionalImageUrls || [],
         createdAt: item.createdAt,
         currency: item.currency,
         externalPlatformHint: item.externalPlatformHint,

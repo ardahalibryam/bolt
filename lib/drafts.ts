@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from "./apiClient";
+import { apiGet, apiPatch, apiPost } from "./apiClient";
 
 export interface CreateDraftResponse {
     draftId: string;
@@ -64,6 +64,47 @@ export async function getDraftPricing(draftId: string): Promise<DraftPricing> {
  */
 export async function generateDraftPricing(draftId: string): Promise<void> {
     await apiPost(`/drafts/${draftId}/pricing`);
+}
+
+/**
+ * Replaces the additional images attached to a draft.
+ * Backend stores up to 4 extras (5 total including the cover).
+ */
+export interface UpdateDraftImagesResponse {
+    draftId: string;
+    imageUrl: string;
+    additionalImageUrls: string[];
+}
+
+export async function updateDraftImages(
+    draftId: string,
+    additionalImageUrls: string[]
+): Promise<UpdateDraftImagesResponse> {
+    return apiPatch<UpdateDraftImagesResponse>(`/drafts/${draftId}/images`, {
+        additionalImageUrls,
+    });
+}
+
+/**
+ * Persists a user-corrected item name to the draft.
+ * Updates detectedName, detectedNameBg, pricingQuery, and searchQuery on the
+ * backend so subsequent pricing and copywriting use the corrected name.
+ */
+export interface CorrectDraftNameResponse {
+    draftId: string;
+    detectedName: string;
+    detectedNameBg: string;
+    status: string;
+    updatedAt: string;
+}
+
+export async function correctDraftName(
+    draftId: string,
+    correctedName: string
+): Promise<CorrectDraftNameResponse> {
+    return apiPatch<CorrectDraftNameResponse>(`/drafts/${draftId}/name`, {
+        correctedName,
+    });
 }
 
 /**

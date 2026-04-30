@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LogoSpinner } from "../components/LogoSpinner";
 import { PressableScale } from "../components/PressableScale";
 import { uploadImage } from "../lib/cloudinary";
-import { createDraft } from "../lib/drafts";
+import { correctDraftName, createDraft } from "../lib/drafts";
 import { compressImage } from "../lib/imageCompression";
 import { Colors } from "./constants/Colors";
 
@@ -22,9 +22,11 @@ export default function CameraScreen() {
   const [confirmationData, setConfirmationData] = useState<{
     draftId: string;
     detectedNameBg: string;
+    imageUrl: string;
   } | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState("");
+  const [submittingName, setSubmittingName] = useState(false);
   const cameraRef = useRef<CameraView>(null);
 
   if (!permission) {
@@ -57,7 +59,7 @@ export default function CameraScreen() {
 
       setIsEditing(false);
       setEditedName("");
-      setConfirmationData({ draftId, detectedNameBg: detectedNameBg || "" });
+      setConfirmationData({ draftId, detectedNameBg: detectedNameBg || "", imageUrl });
     } catch (error) {
       console.error("Error in image processing flow:", error);
       const message = error instanceof Error ? error.message : "Възникна грешка. Моля, опитайте отново.";
@@ -67,17 +69,40 @@ export default function CameraScreen() {
     }
   };
 
-  const handleConfirm = (nameOverride?: string) => {
-    if (!confirmationData) return;
-    const { draftId, detectedNameBg } = confirmationData;
+  const handleConfirm = async (nameOverride?: string) => {
+    if (!confirmationData || submittingName) return;
+    const { draftId, detectedNameBg, imageUrl } = confirmationData;
     const productName = nameOverride ?? detectedNameBg;
+
+    // If user corrected the name, persist it to the backend before navigating
+    // so pricing and copywriting use the corrected name.
+    if (nameOverride && nameOverride.trim() !== detectedNameBg) {
+      setSubmittingName(true);
+      try {
+        await correctDraftName(draftId, nameOverride.trim());
+      } catch (error) {
+        console.error("Failed to correct draft name:", error);
+        const message = error instanceof Error
+          ? error.message
+          : "Грешка при запазване на корекцията. Моля, опитайте отново.";
+        Alert.alert("Грешка", message);
+        setSubmittingName(false);
+        return; // Do NOT navigate on failure
+      }
+      setSubmittingName(false);
+    }
+
     setConfirmationData(null);
     setIsEditing(false);
     setEditedName("");
-    router.push({ pathname: "/price", params: { draftId, productName } });
+    router.push({
+      pathname: "/add-photos",
+      params: { draftId, productName, coverUrl: imageUrl },
+    });
   };
 
   const handleRetry = () => {
+    if (submittingName) return;
     setConfirmationData(null);
     setIsEditing(false);
     setEditedName("");
@@ -220,16 +245,28 @@ export default function CameraScreen() {
                     placeholderTextColor={Colors.inactive}
                     autoFocus
                     returnKeyType="done"
+                    editable={!submittingName}
                     onSubmitEditing={() => editedName.trim() && handleConfirm(editedName.trim())}
                   />
                   <PressableScale
-                    style={[styles.confirmButton, !editedName.trim() && styles.confirmButtonDisabled]}
+                    style={[
+                      styles.confirmButton,
+                      (!editedName.trim() || submittingName) && styles.confirmButtonDisabled,
+                    ]}
                     onPress={() => editedName.trim() && handleConfirm(editedName.trim())}
-                    disabled={!editedName.trim()}
+                    disabled={!editedName.trim() || submittingName}
                   >
-                    <Text style={styles.confirmButtonText}>Продължи</Text>
+                    {submittingName ? (
+                      <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.confirmButtonText}>Продължи</Text>
+                    )}
                   </PressableScale>
-                  <PressableScale style={styles.retryButton} onPress={handleRetry}>
+                  <PressableScale
+                    style={[styles.retryButton, submittingName && styles.confirmButtonDisabled]}
+                    onPress={handleRetry}
+                    disabled={submittingName}
+                  >
                     <Text style={styles.retryButtonText}>Отказ, опитай отново</Text>
                   </PressableScale>
                 </>

@@ -1,3 +1,4 @@
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import { Tabs, useRouter } from "expo-router";
 import { Image, StyleSheet } from "react-native";
@@ -38,11 +39,11 @@ export default function TabsLayout() {
         options={{
           title: "Начало",
           tabBarIcon: ({ color }) => (
-            <Image
-              source={require("../../assets/images/icons/nav/home.png")}
-              style={styles.icon}
-              tintColor={color}
-              resizeMode="contain"
+            <Feather
+              name="home"
+              size={24}
+              color={color}
+              style={styles.ioniconReset}
             />
           ),
         }}
@@ -68,17 +69,26 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="assistant"
         options={{
-          title: "Профил",
+          title: "Асистент",
           tabBarIcon: ({ color }) => (
-            <Image
-              source={require("../../assets/images/icons/nav/user.png")}
-              style={styles.icon}
-              tintColor={color}
-              resizeMode="contain"
+            <Ionicons
+              name="chatbubble-ellipses-outline"
+              size={24}
+              color={color}
+              style={styles.ioniconReset}
             />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          // Hide profile from the tab bar — accessed via the home screen header icon.
+          // The route still works at /(tabs)/profile.
+          href: null,
+          tabBarStyle: { display: "none" },
         }}
       />
     </Tabs>
@@ -86,9 +96,16 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  icon: {
+  // @expo/vector-icons renders glyphs as Text. Without these overrides, the
+  // built-in line-height + Android font padding knocks the tab label out of
+  // alignment with neighboring tabs that use plain <Image> icons.
+  ioniconReset: {
     width: 24,
     height: 24,
+    lineHeight: 24,
+    textAlign: "center",
+    textAlignVertical: "center",
+    includeFontPadding: false,
   },
   snapIcon: {
     width: 50,

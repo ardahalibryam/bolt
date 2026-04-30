@@ -93,6 +93,16 @@ export default function ProfileScreen() {
         style={styles.backgroundGradient}
         resizeMode="cover"
       />
+      <TouchableOpacity
+        style={styles.homeButton}
+        onPress={() => router.push("/(tabs)")}
+      >
+        <Image
+          source={require("../../assets/images/icons/nav/home-black.png")}
+          style={styles.homeIcon}
+          resizeMode="contain"
+        />
+      </TouchableOpacity>
       <ScrollView style={styles.container}>
         <View style={styles.content}>
           <Image
@@ -195,6 +205,17 @@ const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
     backgroundColor: Colors.black,
+  },
+  homeButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 1000,
+    padding: 8,
+  },
+  homeIcon: {
+    width: 24,
+    height: 24,
   },
   backgroundGradient: {
     position: "absolute",
